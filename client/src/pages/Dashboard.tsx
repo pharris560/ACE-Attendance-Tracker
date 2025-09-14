@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import AttendanceStats from "@/components/AttendanceStats";
 import UserCard from "@/components/UserCard";
 import QRScanner from "@/components/QRScanner";
+import AttendancePieChart from "@/components/AttendancePieChart";
 import { 
   Users, 
   UserPlus, 
@@ -15,9 +16,11 @@ import {
   AlertTriangle,
   Camera
 } from "lucide-react";
+import { useLocation } from "wouter";
 
 export default function Dashboard() {
   const [showScanner, setShowScanner] = useState(false);
+  const [location, setLocation] = useLocation();
   
   // Todo: Remove mock data - replace with real data from backend
   const mockStats = {
@@ -27,6 +30,50 @@ export default function Dashboard() {
     tardyCount: 8,
     excusedCount: 2
   };
+
+  // Mock class attendance data for pie charts
+  const mockClassData = [
+    {
+      className: "Mathematics 10A",
+      attendanceData: [
+        { status: 'present' as const, count: 22, color: 'hsl(158, 64%, 52%)' },
+        { status: 'absent' as const, count: 3, color: 'hsl(0, 84%, 60%)' },
+        { status: 'tardy' as const, count: 2, color: 'hsl(38, 92%, 50%)' },
+        { status: 'excused' as const, count: 1, color: 'hsl(215, 16%, 64%)' }
+      ],
+      totalStudents: 28
+    },
+    {
+      className: "English 11B",
+      attendanceData: [
+        { status: 'present' as const, count: 25, color: 'hsl(158, 64%, 52%)' },
+        { status: 'absent' as const, count: 4, color: 'hsl(0, 84%, 60%)' },
+        { status: 'tardy' as const, count: 3, color: 'hsl(38, 92%, 50%)' },
+        { status: 'excused' as const, count: 0, color: 'hsl(215, 16%, 64%)' }
+      ],
+      totalStudents: 32
+    },
+    {
+      className: "Science 9C",
+      attendanceData: [
+        { status: 'present' as const, count: 18, color: 'hsl(158, 64%, 52%)' },
+        { status: 'absent' as const, count: 2, color: 'hsl(0, 84%, 60%)' },
+        { status: 'tardy' as const, count: 1, color: 'hsl(38, 92%, 50%)' },
+        { status: 'excused' as const, count: 1, color: 'hsl(215, 16%, 64%)' }
+      ],
+      totalStudents: 22
+    },
+    {
+      className: "History 12A",
+      attendanceData: [
+        { status: 'present' as const, count: 30, color: 'hsl(158, 64%, 52%)' },
+        { status: 'absent' as const, count: 6, color: 'hsl(0, 84%, 60%)' },
+        { status: 'tardy' as const, count: 2, color: 'hsl(38, 92%, 50%)' },
+        { status: 'excused' as const, count: 0, color: 'hsl(215, 16%, 64%)' }
+      ],
+      totalStudents: 38
+    }
+  ];
 
   const mockRecentUsers = [
     {
@@ -115,6 +162,35 @@ export default function Dashboard() {
 
       {/* Stats Overview */}
       <AttendanceStats {...mockStats} />
+
+      {/* Class Attendance Breakdown */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">Class Attendance Breakdown</h2>
+            <p className="text-sm text-muted-foreground">
+              Individual class performance and attendance rates
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setLocation("/classes")}
+            data-testid="button-view-all-classes"
+          >
+            View All Classes
+          </Button>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6" data-testid="pie-charts-grid">
+          {mockClassData.map((classData, index) => (
+            <AttendancePieChart 
+              key={index}
+              classData={classData}
+            />
+          ))}
+        </div>
+      </div>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

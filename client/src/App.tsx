@@ -11,6 +11,8 @@ import Dashboard from "@/pages/Dashboard";
 import Attendance from "@/pages/Attendance";
 import Scanner from "@/pages/Scanner";
 import Users from "@/pages/Users";
+import Classes from "@/pages/Classes";
+import AddClass from "@/pages/AddClass";
 import IDCards from "@/pages/IDCards";
 import NotFound from "@/pages/not-found";
 
@@ -21,6 +23,8 @@ function Router() {
       <Route path="/attendance" component={Attendance} />
       <Route path="/scanner" component={Scanner} />
       <Route path="/users" component={Users} />
+      <Route path="/classes" component={Classes} />
+      <Route path="/classes/add" component={AddClass} />
       <Route path="/id-cards" component={IDCards} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />

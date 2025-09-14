@@ -8,7 +8,9 @@ import {
   Download,
   Camera,
   IdCard,
-  Calendar
+  Calendar,
+  GraduationCap,
+  Plus
 } from "lucide-react";
 import {
   Sidebar,
@@ -22,7 +24,7 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 
 // Navigation menu items
 const dashboardItems = [
@@ -58,6 +60,16 @@ const managementItems = [
     title: "Add User",
     url: "/users/add",
     icon: UserPlus,
+  },
+  {
+    title: "Classes",
+    url: "/classes",
+    icon: GraduationCap,
+  },
+  {
+    title: "Add Class",
+    url: "/classes/add",
+    icon: Plus,
   },
   {
     title: "ID Cards",
@@ -117,10 +129,10 @@ export function AppSidebar() {
                       data-active={isActive}
                       data-testid={`nav-${item.title.toLowerCase().replace(' ', '-')}`}
                     >
-                      <a href={item.url}>
+                      <Link href={item.url}>
                         <Icon className="h-4 w-4" />
                         <span>{item.title}</span>
-                      </a>
+                      </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
@@ -144,10 +156,10 @@ export function AppSidebar() {
                       data-active={isActive}
                       data-testid={`nav-${item.title.toLowerCase().replace(' ', '-')}`}
                     >
-                      <a href={item.url}>
+                      <Link href={item.url}>
                         <Icon className="h-4 w-4" />
                         <span>{item.title}</span>
-                      </a>
+                      </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
@@ -171,10 +183,10 @@ export function AppSidebar() {
                       data-active={isActive}
                       data-testid={`nav-${item.title.toLowerCase().replace(' ', '-')}`}
                     >
-                      <a href={item.url}>
+                      <Link href={item.url}>
                         <Icon className="h-4 w-4" />
                         <span>{item.title}</span>
-                      </a>
+                      </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );

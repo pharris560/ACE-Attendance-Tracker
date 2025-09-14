@@ -10,7 +10,8 @@ import {
   IdCard,
   Calendar,
   GraduationCap,
-  Plus
+  Plus,
+  Key
 } from "lucide-react";
 import {
   Sidebar,
@@ -88,6 +89,11 @@ const utilityItems = [
     title: "Reports",
     url: "/reports",
     icon: Download,
+  },
+  {
+    title: "API Keys",
+    url: "/settings/api-keys",
+    icon: Key,
   },
   {
     title: "Settings",

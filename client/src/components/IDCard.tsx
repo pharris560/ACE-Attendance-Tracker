@@ -60,9 +60,9 @@ const IDCard = forwardRef<HTMLDivElement, IDCardProps>(({
   };
 
   return (
-    <div ref={ref} className="w-80 mx-auto" data-testid={`id-card-${id}`}>
-      <Card className="border-2 border-primary bg-gradient-to-br from-white to-blue-50 dark:from-gray-900 dark:to-blue-950 print:shadow-none">
-        <CardContent className="p-6 space-y-4">
+    <div ref={ref} className="w-full" data-testid={`id-card-${id}`}>
+      <Card className="border-2 border-primary/20 bg-gradient-to-br from-background via-background to-primary/5 dark:from-background dark:via-background dark:to-primary/10 print:shadow-none">
+        <CardContent className="p-4 space-y-3">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -85,7 +85,7 @@ const IDCard = forwardRef<HTMLDivElement, IDCardProps>(({
 
           {/* Photo and Info Section */}
           <div className="flex items-start gap-4">
-            <Avatar className="h-20 w-20 border-2 border-primary/20">
+            <Avatar className="h-16 w-16 border-2 border-primary/20 flex-shrink-0">
               <AvatarImage src={photo} alt={name} />
               <AvatarFallback className="bg-primary/10 text-primary text-lg font-bold">
                 {getInitials(name)}
@@ -135,8 +135,8 @@ const IDCard = forwardRef<HTMLDivElement, IDCardProps>(({
             </div>
             
             {qrCodeUrl && (
-              <div className="bg-white p-2 rounded border" data-testid={`qr-code-${id}`}>
-                <img src={qrCodeUrl} alt="QR Code" className="w-16 h-16" />
+              <div className="bg-white p-1.5 rounded border border-gray-200" data-testid={`qr-code-${id}`}>
+                <img src={qrCodeUrl} alt="QR Code" className="w-14 h-14" />
               </div>
             )}
           </div>

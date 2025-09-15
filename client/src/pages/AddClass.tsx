@@ -96,6 +96,8 @@ export default function AddClass() {
     { value: "wednesday", label: "Wednesday" },
     { value: "thursday", label: "Thursday" },
     { value: "friday", label: "Friday" },
+    { value: "saturday", label: "Saturday" },
+    { value: "sunday", label: "Sunday" },
     { value: "mon-wed-fri", label: "Mon, Wed, Fri" },
     { value: "tue-thu", label: "Tue, Thu" },
     { value: "daily", label: "Daily (Mon-Fri)" },

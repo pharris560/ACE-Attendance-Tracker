@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,7 @@ type AddClassFormData = z.infer<typeof addClassSchema>;
 export default function AddClass() {
   const [location, setLocation] = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
 
   const form = useForm<AddClassFormData>({
     resolver: zodResolver(addClassSchema),
@@ -80,6 +82,9 @@ export default function AddClass() {
       }
 
       console.log("Class created successfully");
+      
+      // Invalidate classes cache to refresh the list
+      queryClient.invalidateQueries({ queryKey: ["/api/classes"] });
       
       // Navigate back to classes page on success
       setLocation("/classes");

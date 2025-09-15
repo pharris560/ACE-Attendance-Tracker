@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import IDCard from "@/components/IDCard";
-import { Search, Download, Printer, IdCard as IdCardIcon, QrCode, RefreshCw } from "lucide-react";
+import { Search, Download, Printer, IdCard as IdCardIcon, QrCode, RefreshCw, Camera } from "lucide-react";
 import html2canvas from "html2canvas";
 import { useQuery } from "@tanstack/react-query";
 import type { Student } from "@shared/schema";
@@ -13,7 +13,9 @@ export default function IDCards() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("all");
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
+  const [userPhotos, setUserPhotos] = useState<{ [key: string]: string }>({});
   const cardRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
   // Fetch all students from backend (public endpoint for ID cards)
   const { data: students = [], isLoading } = useQuery<Student[]>({
@@ -106,6 +108,29 @@ export default function IDCards() {
       // Add small delay between downloads to prevent browser blocking
       await new Promise(resolve => setTimeout(resolve, 500));
     }
+  };
+
+  const handlePhotoUpload = (userId: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Check if file is an image
+    if (!file.type.startsWith('image/')) {
+      console.error('Please upload an image file');
+      return;
+    }
+
+    // Read the file as a data URL
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const photoUrl = e.target?.result as string;
+      setUserPhotos(prev => ({
+        ...prev,
+        [userId]: photoUrl
+      }));
+      console.log(`Photo uploaded for user ${userId}`);
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -208,6 +233,24 @@ export default function IDCards() {
           filteredUsers.map((user) => (
             <div key={user.id} className="relative group">
               <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm rounded-md p-1 flex gap-1">
+                <input
+                  ref={(el) => fileInputRefs.current[user.id] = el}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handlePhotoUpload(user.id, e)}
+                  data-testid={`input-photo-${user.id}`}
+                />
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8"
+                  onClick={() => fileInputRefs.current[user.id]?.click()}
+                  data-testid={`button-upload-photo-${user.id}`}
+                  title="Upload Photo"
+                >
+                  <Camera className="h-4 w-4" />
+                </Button>
                 <Button
                   size="icon"
                   variant="ghost"
@@ -234,7 +277,7 @@ export default function IDCards() {
                   role="student"
                   class=""
                   department=""
-                  photo=""
+                  photo={userPhotos[user.id] || ""}
                   qrData={`${user.id}-${user.email || ''}-student`}
                 />
               </div>

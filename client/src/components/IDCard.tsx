@@ -64,13 +64,7 @@ const IDCard = forwardRef<HTMLDivElement, IDCardProps>(({
         <CardContent className="p-4 space-y-3">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <img src={aceLogo} alt={companyName} className="h-10 w-10 object-contain rounded" />
-              <div>
-                <h3 className="font-bold text-sm text-primary">{companyName}</h3>
-                <p className="text-xs text-muted-foreground">ID Card</p>
-              </div>
-            </div>
+            <img src={aceLogo} alt={companyName} className="h-10 w-10 object-contain rounded" />
             <Badge variant={role === "staff" ? "default" : "secondary"} className="text-xs">
               {role.toUpperCase()}
             </Badge>

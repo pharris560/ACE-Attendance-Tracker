@@ -191,11 +191,19 @@ export default function ImportStudentsDialog({
         const student = parsedData[i];
         
         try {
-          // Create user and enroll in class
-          await apiRequest('/api/users', 'POST', {
-            ...student,
-            role: 'student',
-            class: className // Assign to this class
+          // Parse name into firstName and lastName
+          const nameParts = student.name.trim().split(' ');
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.slice(1).join(' ') || '';
+          
+          // Create student and enroll in class using public import endpoint
+          const response = await apiRequest('POST', '/api/students/import', {
+            firstName,
+            lastName,
+            email: student.email || '',
+            phone: student.phone || '',
+            studentId: student.studentId || `STU${Date.now()}${i}`,
+            classId
           });
           
           successCount++;

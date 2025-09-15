@@ -428,6 +428,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // POST /api/students/import - Public endpoint for importing students to a class
+  app.post("/api/students/import", async (req, res) => {
+    try {
+      const { firstName, lastName, email, phone, studentId, classId } = req.body;
+      
+      // Validate required fields
+      if (!firstName || !lastName) {
+        return res.status(400).json({ error: "First name and last name are required" });
+      }
+      
+      if (!classId) {
+        return res.status(400).json({ error: "Class ID is required" });
+      }
+      
+      // Create student data
+      const studentData = {
+        firstName,
+        lastName,
+        email: email || '',
+        phone: phone || '',
+        studentId: studentId || `STU${Date.now()}${Math.floor(Math.random() * 1000)}`
+      };
+      
+      // Use anonymous user for public imports
+      const anonymousUserId = "anonymous";
+      const newStudent = await storage.createStudent(studentData, anonymousUserId);
+      
+      // Enroll student in the specified class
+      if (newStudent) {
+        await storage.enrollStudent(classId, newStudent.id);
+      }
+      
+      res.status(201).json(newStudent);
+    } catch (error: any) {
+      console.error("Error importing student:", error);
+      
+      // Check for duplicate student ID
+      if (error?.message?.includes('duplicate') || error?.message?.includes('unique')) {
+        return res.status(409).json({ error: "Student ID already exists" });
+      }
+      
+      res.status(500).json({ error: "Failed to import student" });
+    }
+  });
+  
   // GET /api/students - List students
   app.get("/api/students", requireAuth, async (req, res) => {
     try {

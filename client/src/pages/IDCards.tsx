@@ -231,16 +231,27 @@ export default function IDCards() {
           </Card>
         ) : (
           filteredUsers.map((user) => (
-            <div key={user.id} className="relative group">
-              <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm rounded-md p-1 flex gap-1">
-                <input
-                  ref={(el) => fileInputRefs.current[user.id] = el}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => handlePhotoUpload(user.id, e)}
-                  data-testid={`input-photo-${user.id}`}
+            <div key={user.id} className="flex flex-col gap-2 group">
+              <input
+                ref={(el) => fileInputRefs.current[user.id] = el}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handlePhotoUpload(user.id, e)}
+                data-testid={`input-photo-${user.id}`}
+              />
+              <div ref={(el) => cardRefs.current[user.id] = el} className="hover-elevate rounded-lg">
+                <IDCard
+                  id={user.studentId || user.id}
+                  name={`${user.firstName || ''} ${user.lastName || ''}`.trim()}
+                  role="student"
+                  class=""
+                  department=""
+                  photo={userPhotos[user.id] || ""}
+                  qrData={`${user.id}-${user.email || ''}-student`}
                 />
+              </div>
+              <div className="flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Button
                   size="icon"
                   variant="ghost"
@@ -269,17 +280,6 @@ export default function IDCards() {
                 >
                   <Download className="h-4 w-4" />
                 </Button>
-              </div>
-              <div ref={(el) => cardRefs.current[user.id] = el} className="hover-elevate rounded-lg">
-                <IDCard
-                  id={user.studentId || user.id}
-                  name={`${user.firstName || ''} ${user.lastName || ''}`.trim()}
-                  role="student"
-                  class=""
-                  department=""
-                  photo={userPhotos[user.id] || ""}
-                  qrData={`${user.id}-${user.email || ''}-student`}
-                />
               </div>
             </div>
           ))

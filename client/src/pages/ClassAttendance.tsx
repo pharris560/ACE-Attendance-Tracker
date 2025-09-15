@@ -102,7 +102,36 @@ export default function ClassAttendance() {
   }, [attendanceRecords]);
 
   const handleMarkAttendance = async (studentId: string, status: AttendanceStatus, notes?: string) => {
-    await markAttendanceMutation.mutateAsync({ studentId, status, notes });
+    // Store previous status for potential rollback
+    const previousStatus = attendanceMap.get(studentId);
+    
+    // Optimistic update: immediately update the attendanceMap for instant visual feedback
+    setAttendanceMap(prev => {
+      const newMap = new Map(prev);
+      newMap.set(studentId, status);
+      return newMap;
+    });
+
+    try {
+      await markAttendanceMutation.mutateAsync({ studentId, status, notes });
+    } catch (error: any) {
+      // Rollback optimistic update on error
+      setAttendanceMap(prev => {
+        const rollbackMap = new Map(prev);
+        if (previousStatus) {
+          rollbackMap.set(studentId, previousStatus);
+        } else {
+          rollbackMap.delete(studentId);
+        }
+        return rollbackMap;
+      });
+      
+      toast({
+        title: "Error",
+        description: error.message || "Failed to mark attendance.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleBulkMarkAttendance = async (status: AttendanceStatus) => {

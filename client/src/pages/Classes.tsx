@@ -111,10 +111,7 @@ export default function Classes() {
   };
 
   const handleImportClasses = () => {
-    if (!isAuthenticated) {
-      setLocation("/login");
-      return;
-    }
+    // Allow import without authentication
     setIsImportDialogOpen(true);
   };
 
@@ -136,7 +133,7 @@ export default function Classes() {
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
-            onClick={isAuthenticated ? handleImportClasses : () => setLocation("/login")}
+            onClick={handleImportClasses}
             data-testid="button-import-classes"
           >
             <Upload className="h-4 w-4 mr-2" />

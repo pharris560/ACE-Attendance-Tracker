@@ -486,6 +486,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // GET /api/students/all - Public endpoint to get all students for ID cards
+  app.get("/api/students/all", async (req, res) => {
+    try {
+      const students = await storage.getAllStudents();
+      
+      res.json(students);
+    } catch (error) {
+      console.error("Error fetching all students:", error);
+      res.status(500).json({ error: "Failed to fetch students" });
+    }
+  });
+  
   // GET /api/students/:id - Get student details
   app.get("/api/students/:id", requireAuth, async (req, res) => {
     try {

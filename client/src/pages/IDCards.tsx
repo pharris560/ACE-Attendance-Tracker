@@ -16,9 +16,9 @@ export default function IDCards() {
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const cardRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
-  // Fetch real students from backend
+  // Fetch all students from backend (public endpoint for ID cards)
   const { data: students = [], isLoading } = useQuery<Student[]>({
-    queryKey: ["/api/students"],
+    queryKey: ["/api/students/all"],
   });
 
   // For now, treat all students as "student" role since we don't have staff endpoint yet

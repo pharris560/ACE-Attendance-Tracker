@@ -490,8 +490,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/students/all", async (req, res) => {
     try {
       const students = await storage.getAllStudents();
+      const classes = await storage.getAllClasses();
       
-      res.json(students);
+      // Get enrollments for each student and include class info
+      const studentsWithClasses = await Promise.all(
+        students.map(async (student) => {
+          const enrollments = await storage.getStudentEnrollments(student.id);
+          const enrolledClasses = enrollments
+            .filter(e => e.status === "enrolled")
+            .map(enrollment => {
+              const cls = classes.find(c => c.id === enrollment.classId);
+              return cls ? cls.name : null;
+            })
+            .filter(Boolean);
+          
+          return {
+            ...student,
+            enrolledClasses
+          };
+        })
+      );
+      
+      res.json(studentsWithClasses);
     } catch (error) {
       console.error("Error fetching all students:", error);
       res.status(500).json({ error: "Failed to fetch students" });

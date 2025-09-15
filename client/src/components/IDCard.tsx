@@ -91,12 +91,8 @@ const IDCard = forwardRef<HTMLDivElement, IDCardProps>(({
               
               <div className="space-y-1 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">ID:</span>
+                  <span className="text-muted-foreground">Student ID:</span>
                   <span className="font-mono">{id}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Role:</span>
-                  <span className="capitalize">{role}</span>
                 </div>
                 {role === "student" && userClass && (
                   <div className="flex justify-between">

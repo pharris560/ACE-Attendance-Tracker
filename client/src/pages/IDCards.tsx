@@ -245,7 +245,7 @@ export default function IDCards() {
                   id={user.studentId || user.id}
                   name={`${user.firstName || ''} ${user.lastName || ''}`.trim()}
                   role="student"
-                  class=""
+                  class={(user as any).enrolledClasses?.join(", ") || "Not Enrolled"}
                   department=""
                   photo={userPhotos[user.id] || ""}
                   qrData={`${user.id}-${user.email || ''}-student`}

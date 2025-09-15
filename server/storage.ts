@@ -632,13 +632,17 @@ export class MemStorage implements IStorage {
       const cls = this.classes.get(record.classId);
       const markedByUser = this.users.get(record.markedBy);
       
-      if (student && cls && markedByUser) {
-        const { password: _, ...markedByUserSafe } = markedByUser;
+      // If we have at least the student and class, include the record
+      if (student && cls) {
+        const markedByUserSafe = markedByUser 
+          ? { ...markedByUser, password: undefined }
+          : { id: record.markedBy, username: record.markedBy, role: "staff" as const };
+        
         enrichedRecords.push({
           ...record,
           student,
           class: cls,
-          markedByUser: markedByUserSafe,
+          markedByUser: markedByUserSafe as any,
         });
       }
     }

@@ -5,6 +5,11 @@ import {
   insertApiKeySchema,
   loginSchema,
   registerSchema,
+  insertClassSchema,
+  insertStudentSchema,
+  insertAttendanceRecordSchema,
+  markAttendanceSchema,
+  bulkAttendanceSchema,
   type User,
   type UserSession 
 } from "@shared/schema";
@@ -285,6 +290,391 @@ export async function registerRoutes(app: Express): Promise<Server> {
       },
       timestamp: new Date().toISOString()
     });
+  });
+
+  // Class management routes
+  
+  // POST /api/classes - Create new class
+  app.post("/api/classes", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const validatedData = insertClassSchema.parse(req.body);
+      
+      const newClass = await storage.createClass(validatedData, authReq.user!.id);
+      
+      res.status(201).json(newClass);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Invalid input", 
+          details: error.errors 
+        });
+      }
+      
+      console.error("Error creating class:", error);
+      res.status(500).json({ error: "Failed to create class" });
+    }
+  });
+  
+  // GET /api/classes - List classes
+  app.get("/api/classes", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const classes = await storage.getClassesByUser(authReq.user!.id);
+      
+      res.json(classes);
+    } catch (error) {
+      console.error("Error fetching classes:", error);
+      res.status(500).json({ error: "Failed to fetch classes" });
+    }
+  });
+  
+  // GET /api/classes/:id - Get class details
+  app.get("/api/classes/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const classData = await storage.getClass(id);
+      
+      if (!classData) {
+        return res.status(404).json({ error: "Class not found" });
+      }
+      
+      res.json(classData);
+    } catch (error) {
+      console.error("Error fetching class:", error);
+      res.status(500).json({ error: "Failed to fetch class" });
+    }
+  });
+  
+  // PUT /api/classes/:id - Update class
+  app.put("/api/classes/:id", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const { id } = req.params;
+      const validatedData = insertClassSchema.partial().parse(req.body);
+      
+      const updatedClass = await storage.updateClass(id, validatedData, authReq.user!.id);
+      if (!updatedClass) {
+        return res.status(404).json({ error: "Class not found or access denied" });
+      }
+      
+      res.json(updatedClass);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Invalid input", 
+          details: error.errors 
+        });
+      }
+      
+      console.error("Error updating class:", error);
+      res.status(500).json({ error: "Failed to update class" });
+    }
+  });
+  
+  // DELETE /api/classes/:id - Delete class
+  app.delete("/api/classes/:id", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const { id } = req.params;
+      
+      const success = await storage.deleteClass(id, authReq.user!.id);
+      if (!success) {
+        return res.status(404).json({ error: "Class not found or access denied" });
+      }
+      
+      res.json({ success: true, message: "Class deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting class:", error);
+      res.status(500).json({ error: "Failed to delete class" });
+    }
+  });
+  
+  // GET /api/classes/:id/enrollments - Get class enrollments
+  app.get("/api/classes/:id/enrollments", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const enrollments = await storage.getClassEnrollments(id);
+      
+      res.json(enrollments);
+    } catch (error) {
+      console.error("Error fetching class enrollments:", error);
+      res.status(500).json({ error: "Failed to fetch class enrollments" });
+    }
+  });
+  
+  // Student management routes
+  
+  // POST /api/students - Create new student
+  app.post("/api/students", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const validatedData = insertStudentSchema.parse(req.body);
+      
+      const newStudent = await storage.createStudent(validatedData, authReq.user!.id);
+      
+      res.status(201).json(newStudent);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Invalid input", 
+          details: error.errors 
+        });
+      }
+      
+      console.error("Error creating student:", error);
+      res.status(500).json({ error: "Failed to create student" });
+    }
+  });
+  
+  // GET /api/students - List students
+  app.get("/api/students", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const students = await storage.getStudentsByUser(authReq.user!.id);
+      
+      res.json(students);
+    } catch (error) {
+      console.error("Error fetching students:", error);
+      res.status(500).json({ error: "Failed to fetch students" });
+    }
+  });
+  
+  // GET /api/students/:id - Get student details
+  app.get("/api/students/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const student = await storage.getStudent(id);
+      
+      if (!student) {
+        return res.status(404).json({ error: "Student not found" });
+      }
+      
+      res.json(student);
+    } catch (error) {
+      console.error("Error fetching student:", error);
+      res.status(500).json({ error: "Failed to fetch student" });
+    }
+  });
+  
+  // PUT /api/students/:id - Update student
+  app.put("/api/students/:id", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const { id } = req.params;
+      const validatedData = insertStudentSchema.partial().parse(req.body);
+      
+      const updatedStudent = await storage.updateStudent(id, validatedData, authReq.user!.id);
+      if (!updatedStudent) {
+        return res.status(404).json({ error: "Student not found or access denied" });
+      }
+      
+      res.json(updatedStudent);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Invalid input", 
+          details: error.errors 
+        });
+      }
+      
+      console.error("Error updating student:", error);
+      res.status(500).json({ error: "Failed to update student" });
+    }
+  });
+  
+  // DELETE /api/students/:id - Delete student
+  app.delete("/api/students/:id", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const { id } = req.params;
+      
+      const success = await storage.deleteStudent(id, authReq.user!.id);
+      if (!success) {
+        return res.status(404).json({ error: "Student not found or access denied" });
+      }
+      
+      res.json({ success: true, message: "Student deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting student:", error);
+      res.status(500).json({ error: "Failed to delete student" });
+    }
+  });
+  
+  // POST /api/classes/:classId/enroll/:studentId - Enroll student in class
+  app.post("/api/classes/:classId/enroll/:studentId", requireAuth, async (req, res) => {
+    try {
+      const { classId, studentId } = req.params;
+      
+      const enrollment = await storage.enrollStudent(classId, studentId);
+      res.status(201).json(enrollment);
+    } catch (error) {
+      console.error("Error enrolling student:", error);
+      res.status(500).json({ error: "Failed to enroll student" });
+    }
+  });
+  
+  // DELETE /api/classes/:classId/enroll/:studentId - Unenroll student from class
+  app.delete("/api/classes/:classId/enroll/:studentId", requireAuth, async (req, res) => {
+    try {
+      const { classId, studentId } = req.params;
+      
+      const success = await storage.unenrollStudent(classId, studentId);
+      if (!success) {
+        return res.status(404).json({ error: "Enrollment not found" });
+      }
+      
+      res.json({ success: true, message: "Student unenrolled successfully" });
+    } catch (error) {
+      console.error("Error unenrolling student:", error);
+      res.status(500).json({ error: "Failed to unenroll student" });
+    }
+  });
+  
+  // Attendance management routes
+  
+  // POST /api/attendance - Mark attendance
+  app.post("/api/attendance", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const validatedData = markAttendanceSchema.parse(req.body);
+      
+      const attendance = await storage.markAttendance({
+        ...validatedData,
+        markedBy: authReq.user!.id,
+      });
+      
+      res.status(201).json(attendance);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Invalid input", 
+          details: error.errors 
+        });
+      }
+      
+      console.error("Error marking attendance:", error);
+      res.status(500).json({ error: "Failed to mark attendance" });
+    }
+  });
+  
+  // POST /api/attendance/bulk - Bulk mark attendance
+  app.post("/api/attendance/bulk", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const validatedData = bulkAttendanceSchema.parse(req.body);
+      
+      const attendanceRecords = validatedData.records.map(record => ({
+        ...record,
+        classId: validatedData.classId,
+        date: validatedData.date,
+        markedBy: authReq.user!.id,
+      }));
+      
+      const results = await storage.bulkMarkAttendance(attendanceRecords);
+      res.status(201).json(results);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Invalid input", 
+          details: error.errors 
+        });
+      }
+      
+      console.error("Error bulk marking attendance:", error);
+      res.status(500).json({ error: "Failed to bulk mark attendance" });
+    }
+  });
+  
+  // GET /api/attendance/class/:classId - Get attendance by class
+  app.get("/api/attendance/class/:classId", requireAuth, async (req, res) => {
+    try {
+      const { classId } = req.params;
+      const { date } = req.query;
+      
+      const attendance = await storage.getAttendanceByClass(classId, date as string);
+      res.json(attendance);
+    } catch (error) {
+      console.error("Error fetching class attendance:", error);
+      res.status(500).json({ error: "Failed to fetch class attendance" });
+    }
+  });
+  
+  // GET /api/attendance/student/:studentId - Get attendance by student
+  app.get("/api/attendance/student/:studentId", requireAuth, async (req, res) => {
+    try {
+      const { studentId } = req.params;
+      const { classId } = req.query;
+      
+      const attendance = await storage.getAttendanceByStudent(studentId, classId as string);
+      res.json(attendance);
+    } catch (error) {
+      console.error("Error fetching student attendance:", error);
+      res.status(500).json({ error: "Failed to fetch student attendance" });
+    }
+  });
+  
+  // PUT /api/attendance/:id - Update attendance record
+  app.put("/api/attendance/:id", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const { id } = req.params;
+      const validatedData = insertAttendanceRecordSchema.partial().parse(req.body);
+      
+      const updatedAttendance = await storage.updateAttendance(id, validatedData, authReq.user!.id);
+      if (!updatedAttendance) {
+        return res.status(404).json({ error: "Attendance record not found or access denied" });
+      }
+      
+      res.json(updatedAttendance);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Invalid input", 
+          details: error.errors 
+        });
+      }
+      
+      console.error("Error updating attendance:", error);
+      res.status(500).json({ error: "Failed to update attendance" });
+    }
+  });
+  
+  // DELETE /api/attendance/:id - Delete attendance record
+  app.delete("/api/attendance/:id", requireAuth, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const { id } = req.params;
+      
+      const success = await storage.deleteAttendanceRecord(id, authReq.user!.id);
+      if (!success) {
+        return res.status(404).json({ error: "Attendance record not found or access denied" });
+      }
+      
+      res.json({ success: true, message: "Attendance record deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting attendance record:", error);
+      res.status(500).json({ error: "Failed to delete attendance record" });
+    }
+  });
+  
+  // GET /api/attendance/stats/:classId - Get attendance statistics for a class
+  app.get("/api/attendance/stats/:classId", requireAuth, async (req, res) => {
+    try {
+      const { classId } = req.params;
+      const { startDate, endDate } = req.query;
+      
+      const stats = await storage.getAttendanceStats(
+        classId, 
+        startDate as string, 
+        endDate as string
+      );
+      
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching attendance stats:", error);
+      res.status(500).json({ error: "Failed to fetch attendance stats" });
+    }
   });
 
   // Health check endpoint

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,9 +42,14 @@ export default function APIKeys() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const [, setLocation] = useLocation();
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated using useEffect
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      setLocation("/login");
+    }
+  }, [isLoading, isAuthenticated]);
+
   if (!isLoading && !isAuthenticated) {
-    setLocation("/login");
     return null;
   }
 
@@ -61,9 +66,6 @@ export default function APIKeys() {
         credentials: 'include'
       });
       if (!response.ok) {
-        if (response.status === 401) {
-          setLocation("/login");
-        }
         throw new Error("Failed to fetch API keys");
       }
       return response.json();

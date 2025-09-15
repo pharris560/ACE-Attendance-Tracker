@@ -14,6 +14,7 @@ import Scanner from "@/pages/Scanner";
 import Users from "@/pages/Users";
 import Classes from "@/pages/Classes";
 import AddClass from "@/pages/AddClass";
+import ClassAttendance from "@/pages/ClassAttendance";
 import IDCards from "@/pages/IDCards";
 import APIKeys from "@/pages/APIKeys";
 import Login from "@/pages/Login";
@@ -31,6 +32,7 @@ function Router() {
       <Route path="/users" component={Users} />
       <Route path="/classes" component={Classes} />
       <Route path="/classes/add" component={AddClass} />
+      <Route path="/classes/:classId/attendance" component={ClassAttendance} />
       <Route path="/id-cards" component={IDCards} />
       <Route path="/settings/api-keys" component={APIKeys} />
       {/* Fallback to 404 */}

@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Users, Clock, Edit, Trash2, BookOpen } from "lucide-react";
+import { Users, Clock, Edit, Trash2, BookOpen, UserCheck } from "lucide-react";
 
 interface ClassCardProps {
   id: string;
@@ -16,6 +16,7 @@ interface ClassCardProps {
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
   onViewDetails?: (id: string) => void;
+  onManageAttendance?: (id: string) => void;
 }
 
 export default function ClassCard({
@@ -30,7 +31,8 @@ export default function ClassCard({
   status,
   onEdit,
   onDelete,
-  onViewDetails
+  onViewDetails,
+  onManageAttendance
 }: ClassCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -121,6 +123,17 @@ export default function ClassCard({
           >
             View Details
           </Button>
+          {status === "active" && (
+            <Button
+              size="sm"
+              className="text-xs"
+              onClick={() => onManageAttendance?.(id)}
+              data-testid={`button-attendance-${id}`}
+            >
+              <UserCheck className="h-4 w-4 mr-1" />
+              Attendance
+            </Button>
+          )}
           <Button
             size="sm"
             variant="ghost"

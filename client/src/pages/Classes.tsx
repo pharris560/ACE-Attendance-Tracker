@@ -1,77 +1,40 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import ClassCard from "@/components/ClassCard";
-import { Search, Plus, Download, Upload, GraduationCap, Users, BookOpen } from "lucide-react";
+import { Search, Plus, Download, Upload, GraduationCap, Users, BookOpen, RefreshCw } from "lucide-react";
 import { useLocation } from "wouter";
+import { useAuth } from "@/contexts/AuthContext";
+import { type ClassWithStats } from "@shared/schema";
 
 export default function Classes() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("all");
   const [location, setLocation] = useLocation();
+  const { user, isAuthenticated } = useAuth();
 
-  // Todo: Remove mock data - replace with real data from backend
-  const mockClasses = [
-    {
-      id: "CLS001",
-      name: "Mathematics 101",
-      description: "Introduction to basic mathematical concepts including algebra, geometry, and statistics.",
-      capacity: 30,
-      enrolledCount: 28,
-      schedule: "Mon, Wed, Fri 9:00-10:00 AM",
-      instructor: "Dr. Sarah Wilson",
-      location: "Room A-101",
-      status: "active" as const,
-    },
-    {
-      id: "CLS002",
-      name: "Physics 201",
-      description: "Advanced physics course covering mechanics, thermodynamics, and electromagnetism.",
-      capacity: 25,
-      enrolledCount: 18,
-      schedule: "Tue, Thu 11:00 AM-12:30 PM",
-      instructor: "Prof. Michael Chen",
-      location: "Lab B-204",
-      status: "active" as const,
-    },
-    {
-      id: "CLS003",
-      name: "Chemistry 150",
-      description: "General chemistry fundamentals with laboratory experiments.",
-      capacity: 20,
-      enrolledCount: 20,
-      schedule: "Mon, Wed 2:00-3:30 PM",
-      instructor: "Dr. Emily Rodriguez",
-      location: "Lab C-105",
-      status: "active" as const,
-    },
-    {
-      id: "CLS004",
-      name: "Biology 101",
-      description: "Introduction to biological sciences and life processes.",
-      capacity: 35,
-      enrolledCount: 12,
-      schedule: "Tue, Thu, Fri 10:00-11:00 AM",
-      instructor: "Prof. David Park",
-      location: "Room D-201",
-      status: "inactive" as const,
-    },
-    {
-      id: "CLS005",
-      name: "History 300",
-      description: "Modern world history from 1800 to present day.",
-      capacity: 40,
-      enrolledCount: 35,
-      schedule: "Mon, Wed 1:00-2:30 PM",
-      instructor: "Dr. Lisa Thompson",
-      location: "Room E-301",
-      status: "completed" as const,
+  // Fetch classes from backend
+  const { data: classes = [], isLoading: classesLoading, error: classesError } = useQuery<ClassWithStats[]>({
+    queryKey: ["/api/classes"],
+    enabled: isAuthenticated,
+  });
+
+  // Redirect to login if not authenticated using useEffect
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setLocation("/login");
     }
-  ];
+  }, [isAuthenticated]);
 
-  const filteredClasses = mockClasses.filter(classItem => {
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  const filteredClasses = classes.filter(classItem => {
     const matchesSearch = classItem.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          classItem.instructor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          classItem.description?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -79,10 +42,58 @@ export default function Classes() {
     return matchesSearch && matchesFilter;
   });
 
-  const activeCount = mockClasses.filter(c => c.status === 'active').length;
-  const inactiveCount = mockClasses.filter(c => c.status === 'inactive').length;
-  const completedCount = mockClasses.filter(c => c.status === 'completed').length;
-  const totalStudents = mockClasses.reduce((sum, c) => sum + c.enrolledCount, 0);
+  const activeCount = classes.filter(c => c.status === 'active').length;
+  const inactiveCount = classes.filter(c => c.status === 'inactive').length;
+  const completedCount = classes.filter(c => c.status === 'completed').length;
+  const totalStudents = classes.reduce((sum, c) => sum + c.enrolledCount, 0);
+
+  // Loading skeleton component
+  const LoadingSkeleton = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-80" />
+        </div>
+        <div className="flex gap-2">
+          <Skeleton className="h-10 w-20" />
+          <Skeleton className="h-10 w-20" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {[...Array(4)].map((_, i) => (
+          <Skeleton key={i} className="h-32" />
+        ))}
+      </div>
+    </div>
+  );
+
+  // Error state
+  if (classesError) {
+    return (
+      <div className="space-y-6" data-testid="classes-page">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <RefreshCw className="h-12 w-12 text-destructive mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Error Loading Classes</h3>
+            <p className="text-muted-foreground text-center mb-4">
+              {classesError instanceof Error ? classesError.message : "Failed to load classes"}
+            </p>
+            <Button onClick={() => window.location.reload()}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Loading state
+  if (classesLoading) {
+    return <LoadingSkeleton />;
+  }
 
   const handleEditClass = (id: string) => {
     console.log(`Editing class ${id}`);
@@ -97,6 +108,10 @@ export default function Classes() {
   const handleViewDetails = (id: string) => {
     console.log(`Viewing details for class ${id}`);
     // Todo: Navigate to class details page
+  };
+
+  const handleManageAttendance = (id: string) => {
+    setLocation(`/classes/${id}/attendance`);
   };
 
   const handleAddClass = () => {
@@ -158,7 +173,7 @@ export default function Classes() {
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockClasses.length}</div>
+            <div className="text-2xl font-bold">{classes.length}</div>
             <p className="text-xs text-muted-foreground">
               Classes in system
             </p>
@@ -198,7 +213,7 @@ export default function Classes() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-600">
-              {Math.round((totalStudents / mockClasses.reduce((sum, c) => sum + c.capacity, 0)) * 100)}%
+              {classes.length > 0 ? Math.round((totalStudents / classes.reduce((sum, c) => sum + c.capacity, 0)) * 100) : 0}%
             </div>
             <p className="text-xs text-muted-foreground">
               Overall utilization
@@ -228,7 +243,7 @@ export default function Classes() {
                 onClick={() => setFilter("all")}
                 data-testid="filter-all"
               >
-                All ({mockClasses.length})
+                All ({classes.length})
               </Button>
               <Button
                 variant={filter === "active" ? "default" : "outline"}
@@ -283,6 +298,7 @@ export default function Classes() {
               onEdit={handleEditClass}
               onDelete={handleDeleteClass}
               onViewDetails={handleViewDetails}
+              onManageAttendance={handleManageAttendance}
             />
           ))
         )}
@@ -294,7 +310,7 @@ export default function Classes() {
           <CardContent className="py-4">
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <span>
-                Showing {filteredClasses.length} of {mockClasses.length} classes
+                Showing {filteredClasses.length} of {classes.length} classes
               </span>
               <div className="flex items-center gap-4">
                 <Badge variant="outline" className="text-xs">

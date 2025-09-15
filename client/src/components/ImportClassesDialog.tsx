@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
@@ -44,6 +44,23 @@ export default function ImportClassesDialog({ open, onOpenChange }: ImportClasse
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  // Reset state when dialog is closed
+  useEffect(() => {
+    if (!open) {
+      setFile(null);
+      setParsedData([]);
+      setValidationErrors([]);
+      setImportProgress(0);
+      setImportResults(null);
+      setIsProcessing(false);
+      
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  }, [open]);
 
   // Download CSV template
   const handleDownloadTemplate = () => {
@@ -108,7 +125,7 @@ export default function ImportClassesDialog({ open, onOpenChange }: ImportClasse
         }
 
         const validStatuses = ['active', 'inactive', 'completed'];
-        if (!validStatuses.includes(row.status)) {
+        if (!validStatuses.includes(row.status.toLowerCase())) {
           errors.push(`Row ${i + 1}: Invalid status "${row.status}". Must be one of: ${validStatuses.join(', ')}`);
           continue;
         }
@@ -229,18 +246,7 @@ export default function ImportClassesDialog({ open, onOpenChange }: ImportClasse
   };
 
   const handleClose = () => {
-    setFile(null);
-    setParsedData([]);
-    setValidationErrors([]);
-    setImportProgress(0);
-    setImportResults(null);
-    setIsProcessing(false);
     onOpenChange(false);
-    
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
   };
 
   return (

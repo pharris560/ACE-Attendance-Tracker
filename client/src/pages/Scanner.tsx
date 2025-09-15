@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import QRScanner from "@/components/QRScanner";
 import { QrCode, CheckCircle, XCircle, Clock, User, MapPin } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -22,7 +22,20 @@ export default function Scanner() {
       accuracy: number;
     };
   }>>([]);
+  const [defaultClassId, setDefaultClassId] = useState<string | null>(null);
   const { toast } = useToast();
+  
+  // Fetch the first available class to use as default
+  const { data: classes } = useQuery<any[]>({
+    queryKey: ['/api/classes']
+  });
+  
+  useEffect(() => {
+    if (classes && Array.isArray(classes) && classes.length > 0) {
+      setDefaultClassId(classes[0].id);
+      console.log('Using class ID for attendance:', classes[0].id, classes[0].name);
+    }
+  }, [classes]);
 
   const markAttendanceMutation = useMutation({
     mutationFn: async (data: {
@@ -36,7 +49,7 @@ export default function Scanner() {
       
       // Use the first available class (Mathematics 101) for demo purposes
       // In production, you'd want to let the user select a class or determine it from context
-      const classId = data.classId || 'test-class-1'; // Mathematics 101
+      const classId = data.classId || defaultClassId || 'test-class-1';
       
       return apiRequest('POST', '/api/attendance', {
         studentId: data.studentId,

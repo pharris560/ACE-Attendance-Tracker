@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, boolean, integer, date } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, boolean, integer, date, numeric } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -82,6 +82,13 @@ export const attendanceRecords = pgTable("attendance_records", {
   date: date("date").notNull(),
   status: text("status").notNull(), // present, absent, tardy, excused
   notes: text("notes"),
+  // Location tracking fields
+  latitude: numeric("latitude", { precision: 10, scale: 7 }),
+  longitude: numeric("longitude", { precision: 10, scale: 7 }),
+  locationAccuracy: numeric("location_accuracy"), // accuracy in meters
+  locationAddress: text("location_address"), // human-readable address
+  checkInTime: timestamp("check_in_time"),
+  checkOutTime: timestamp("check_out_time"),
   markedBy: varchar("marked_by").notNull().references(() => users.id),
   markedAt: timestamp("marked_at").notNull().default(sql`now()`),
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
@@ -141,6 +148,12 @@ export const markAttendanceSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format"),
   status: attendanceStatusSchema,
   notes: z.string().optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+  locationAccuracy: z.number().optional(),
+  locationAddress: z.string().optional(),
+  checkInTime: z.string().optional(),
+  checkOutTime: z.string().optional(),
 });
 
 export const bulkAttendanceSchema = z.object({

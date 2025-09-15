@@ -616,10 +616,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = markAttendanceSchema.parse(req.body);
       
-      const attendance = await storage.markAttendance({
+      // Convert numeric strings if location data is provided
+      const attendanceData: any = {
         ...validatedData,
         markedBy: "anonymous", // Default for public access
-      });
+      };
+      
+      if (validatedData.latitude !== undefined) {
+        attendanceData.latitude = validatedData.latitude.toString();
+      }
+      if (validatedData.longitude !== undefined) {
+        attendanceData.longitude = validatedData.longitude.toString();
+      }
+      if (validatedData.locationAccuracy !== undefined) {
+        attendanceData.locationAccuracy = validatedData.locationAccuracy.toString();
+      }
+      
+      const attendance = await storage.markAttendance(attendanceData);
       
       res.status(201).json(attendance);
     } catch (error) {

@@ -30,11 +30,9 @@ export default function QRScanner({ onScanSuccess, onScanError, captureLocation 
   const scannerRef = useRef<QrScanner | null>(null);
 
   useEffect(() => {
-    // Check camera permission
-    navigator.mediaDevices.getUserMedia({ video: true })
-      .then(() => setHasPermission(true))
-      .catch(() => setHasPermission(false));
-
+    // Don't check permission initially - let the Webcam component handle it
+    // The permission will be requested when user clicks "Start Scanning"
+    
     // Check and request location permission if needed
     if (captureLocation && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -59,13 +57,19 @@ export default function QRScanner({ onScanSuccess, onScanError, captureLocation 
   }, [captureLocation]);
 
   const startScanning = async () => {
-    if (!webcamRef.current?.video) return;
+    console.log('Starting QR scanner...');
+    if (!webcamRef.current?.video) {
+      console.error('Webcam video element not found');
+      setError('Camera not ready');
+      return;
+    }
     
     try {
       setIsScanning(true);
       setError(null);
       
       const video = webcamRef.current.video;
+      console.log('Video element ready:', video);
       
       if (scannerRef.current) {
         scannerRef.current.stop();
@@ -76,6 +80,11 @@ export default function QRScanner({ onScanSuccess, onScanError, captureLocation 
         async (result) => {
           console.log('QR Code scanned:', result.data);
           setLastResult(result.data);
+          
+          // Stop the scanner after successful scan
+          if (scannerRef.current) {
+            scannerRef.current.stop();
+          }
           
           // Capture current location if enabled
           if (captureLocation && navigator.geolocation) {
@@ -104,7 +113,9 @@ export default function QRScanner({ onScanSuccess, onScanError, captureLocation 
         },
         {
           onDecodeError: (error) => {
-            // Silently handle decode errors as they're common during scanning
+            // Log decode errors for debugging (common during scanning)
+            const errorMsg = typeof error === 'string' ? error : error.message;
+            console.debug('QR decode attempt failed:', errorMsg);
           },
           highlightScanRegion: true,
           highlightCodeOutline: true,
@@ -112,9 +123,20 @@ export default function QRScanner({ onScanSuccess, onScanError, captureLocation 
       );
       
       await scannerRef.current.start();
+      console.log('QR scanner started successfully');
+      setHasPermission(true);
     } catch (err) {
+      console.error('Error starting QR scanner:', err);
       const errorMsg = err instanceof Error ? err.message : 'Failed to start camera';
-      setError(errorMsg);
+      
+      // Check if it's a permission error
+      if (errorMsg.includes('permission') || errorMsg.includes('denied')) {
+        setHasPermission(false);
+        setError('Camera permission denied. Please allow camera access and try again.');
+      } else {
+        setError(errorMsg);
+      }
+      
       onScanError?.(errorMsg);
       setIsScanning(false);
     }
@@ -127,26 +149,6 @@ export default function QRScanner({ onScanSuccess, onScanError, captureLocation 
     setIsScanning(false);
   };
 
-  if (hasPermission === false) {
-    return (
-      <Card data-testid="qr-scanner-no-permission">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CameraOff className="h-5 w-5" />
-            Camera Permission Required
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Alert>
-            <XCircle className="h-4 w-4" />
-            <AlertDescription>
-              Camera access is required to scan QR codes. Please enable camera permissions in your browser settings.
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card className="w-full max-w-md mx-auto" data-testid="qr-scanner">
@@ -158,19 +160,26 @@ export default function QRScanner({ onScanSuccess, onScanError, captureLocation 
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
-          {hasPermission && (
-            <Webcam
-              ref={webcamRef}
-              audio={false}
-              className="w-full h-full object-cover"
-              videoConstraints={{
-                width: 300,
-                height: 300,
-                facingMode: "environment"
-              }}
-              data-testid="webcam-video"
-            />
-          )}
+          <Webcam
+            ref={webcamRef}
+            audio={false}
+            className="w-full h-full object-cover"
+            videoConstraints={{
+              width: 300,
+              height: 300,
+              facingMode: "environment"
+            }}
+            onUserMedia={() => {
+              console.log('Camera access granted');
+              setHasPermission(true);
+            }}
+            onUserMediaError={(err) => {
+              console.error('Camera access denied:', err);
+              setHasPermission(false);
+              setError('Camera access denied. Please allow camera access in your browser.');
+            }}
+            data-testid="webcam-video"
+          />
           
           {isScanning && (
             <div className="absolute inset-0 border-2 border-primary animate-pulse">

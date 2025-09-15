@@ -24,8 +24,8 @@ import { useToast } from "@/hooks/use-toast";
 export default function Reports() {
   const [selectedClass, setSelectedClass] = useState<string>("all");
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-    from: startOfMonth(new Date()),
-    to: endOfMonth(new Date()),
+    from: new Date(),
+    to: new Date(),
   });
   const [reportType, setReportType] = useState<string>("attendance");
   const { toast } = useToast();
@@ -39,18 +39,43 @@ export default function Reports() {
   const { data: attendanceData, refetch: refetchAttendance } = useQuery({
     queryKey: ["/api/attendance/report", selectedClass, dateRange],
     queryFn: async () => {
-      const classFilter = selectedClass === "all" ? "" : `&classId=${selectedClass}`;
       const fromDate = format(dateRange.from, "yyyy-MM-dd");
       const toDate = format(dateRange.to, "yyyy-MM-dd");
       
-      // For now, we'll use a simple approach to get attendance data
-      const promises = classes.map(cls => 
-        fetch(`/api/attendance/class/${cls.id}?startDate=${fromDate}&endDate=${toDate}`)
-          .then(res => res.json())
-          .then(data => ({ classId: cls.id, className: cls.name, records: data }))
-      );
+      // Generate all dates in the range
+      const dates: string[] = [];
+      const currentDate = new Date(dateRange.from);
+      const endDate = new Date(dateRange.to);
       
-      return Promise.all(promises);
+      while (currentDate <= endDate) {
+        dates.push(format(currentDate, "yyyy-MM-dd"));
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      
+      // Fetch attendance for each class and each date
+      const classesToQuery = selectedClass === "all" 
+        ? classes 
+        : classes.filter(cls => cls.id === selectedClass);
+      
+      const allRecords: any[] = [];
+      
+      for (const cls of classesToQuery) {
+        for (const date of dates) {
+          const response = await fetch(`/api/attendance/class/${cls.id}?date=${date}`);
+          const records = await response.json();
+          
+          if (records && records.length > 0) {
+            allRecords.push({
+              classId: cls.id,
+              className: cls.name,
+              date: date,
+              records: records
+            });
+          }
+        }
+      }
+      
+      return allRecords;
     },
     enabled: classes.length > 0,
   });
@@ -69,7 +94,7 @@ export default function Reports() {
   };
 
   const generateReportData = () => {
-    if (!attendanceData) return [];
+    if (!attendanceData || attendanceData.length === 0) return [];
     
     // Compile report data based on report type
     const data: any[] = [];
@@ -77,12 +102,12 @@ export default function Reports() {
     attendanceData.forEach((classData: any) => {
       classData.records.forEach((record: any) => {
         data.push({
-          date: record.date,
+          date: classData.date,
           class: classData.className,
           student: `${record.firstName} ${record.lastName}`,
           studentId: record.studentId,
           status: record.status,
-          markedAt: record.markedAt,
+          markedAt: record.markedAt ? format(new Date(record.markedAt), "HH:mm:ss") : "N/A",
           location: record.locationAccuracy ? 
             (parseFloat(record.locationAccuracy) <= 100 ? "Onsite" : "Remote") : 
             "Unknown",
@@ -97,8 +122,8 @@ export default function Reports() {
   const exportToCSV = (data: any[]) => {
     if (data.length === 0) {
       toast({
-        title: "No Data",
-        description: "No data available for the selected period.",
+        title: "No Data Available",
+        description: "No attendance records found for the selected period. Please mark attendance first by going to Classes and marking attendance for students.",
         variant: "destructive",
       });
       return;
@@ -122,7 +147,7 @@ export default function Reports() {
   };
 
   const getAttendanceStats = () => {
-    if (!attendanceData) return { present: 0, absent: 0, tardy: 0, excused: 0, onsite: 0, remote: 0 };
+    if (!attendanceData || attendanceData.length === 0) return { present: 0, absent: 0, tardy: 0, excused: 0, onsite: 0, remote: 0 };
     
     const stats = {
       present: 0,
@@ -364,9 +389,22 @@ export default function Reports() {
         <CardContent>
           <div className="text-sm text-muted-foreground">
             <p>Total Records: {generateReportData().length}</p>
-            <p className="mt-2">
-              Report includes attendance status, location tracking, and timestamps for all selected classes and date range.
-            </p>
+            {generateReportData().length === 0 ? (
+              <div className="mt-4 p-4 bg-muted rounded-md">
+                <p className="font-medium mb-2">No attendance records found for this period.</p>
+                <p>To generate reports, you need to:</p>
+                <ol className="list-decimal list-inside mt-2 space-y-1">
+                  <li>Go to Classes and select a class</li>
+                  <li>Mark attendance for students (Present, Absent, Tardy, or Excused)</li>
+                  <li>Return here and select today's date to see the records</li>
+                </ol>
+                <p className="mt-2 text-xs">You can also use the QR Scanner to mark attendance automatically with location tracking.</p>
+              </div>
+            ) : (
+              <p className="mt-2">
+                Report includes attendance status, location tracking, and timestamps for all selected classes and date range.
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>

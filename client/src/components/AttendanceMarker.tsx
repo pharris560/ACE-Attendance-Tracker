@@ -12,7 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Check, X, Clock, AlertCircle, User, Edit3 } from "lucide-react";
+import { Check, X, Clock, AlertCircle, User, Edit3, MapPin } from "lucide-react";
 import { type StudentWithEnrollment, type AttendanceStatus } from "@shared/schema";
 
 interface AttendanceMarkerProps {
@@ -20,6 +20,12 @@ interface AttendanceMarkerProps {
   classId: string;
   date: string;
   currentStatus?: AttendanceStatus;
+  locationData?: {
+    latitude?: string;
+    longitude?: string;
+    locationAccuracy?: string;
+    locationAddress?: string;
+  };
   onMarkAttendance: (studentId: string, status: AttendanceStatus, notes?: string) => Promise<void>;
   isLoading?: boolean;
 }
@@ -29,6 +35,7 @@ export default function AttendanceMarker({
   classId,
   date,
   currentStatus,
+  locationData,
   onMarkAttendance,
   isLoading = false
 }: AttendanceMarkerProps) {
@@ -105,15 +112,28 @@ export default function AttendanceMarker({
               </p>
             </div>
           </div>
-          {currentStatus && (
-            <Badge
-              className={getStatusColor(currentStatus)}
-              data-testid={`badge-status-${student.id}`}
-            >
-              {getStatusIcon(currentStatus)}
-              <span className="ml-1 capitalize">{currentStatus}</span>
-            </Badge>
-          )}
+          <div className="flex flex-col items-end gap-1">
+            {currentStatus && (
+              <Badge
+                className={getStatusColor(currentStatus)}
+                data-testid={`badge-status-${student.id}`}
+              >
+                {getStatusIcon(currentStatus)}
+                <span className="ml-1 capitalize">{currentStatus}</span>
+              </Badge>
+            )}
+            {locationData && (locationData.latitude || locationData.longitude) && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <MapPin className="h-3 w-3" />
+                <span>
+                  {locationData.locationAccuracy ? 
+                    `±${Math.round(parseFloat(locationData.locationAccuracy))}m` : 
+                    'Location tracked'
+                  }
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="pt-0">

@@ -421,17 +421,28 @@ export default function ClassAttendance() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {students.map((student) => (
-                <AttendanceMarker
-                  key={student.id}
-                  student={student}
-                  classId={classId!}
-                  date={dateString}
-                  currentStatus={attendanceMap.get(student.id)}
-                  onMarkAttendance={handleMarkAttendance}
-                  isLoading={markAttendanceMutation.isPending}
-                />
-              ))}
+              {students.map((student) => {
+                // Find the attendance record for this student
+                const attendanceRecord = attendanceRecords.find(record => record.studentId === student.id);
+                
+                return (
+                  <AttendanceMarker
+                    key={student.id}
+                    student={student}
+                    classId={classId!}
+                    date={dateString}
+                    currentStatus={attendanceMap.get(student.id)}
+                    locationData={attendanceRecord ? {
+                      latitude: attendanceRecord.latitude,
+                      longitude: attendanceRecord.longitude,
+                      locationAccuracy: attendanceRecord.locationAccuracy,
+                      locationAddress: attendanceRecord.locationAddress,
+                    } : undefined}
+                    onMarkAttendance={handleMarkAttendance}
+                    isLoading={markAttendanceMutation.isPending}
+                  />
+                );
+              })}
             </div>
           )}
         </CardContent>

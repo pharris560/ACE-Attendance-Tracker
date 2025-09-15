@@ -142,37 +142,12 @@ export default function Scanner() {
                 Live Scanner
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent>
               <QRScanner
                 onScanSuccess={handleScanSuccess}
                 onScanError={handleScanError}
                 captureLocation={true}
               />
-              
-              {/* Test button for debugging */}
-              <div className="border border-dashed rounded-lg p-4 bg-muted/10">
-                <div className="text-sm text-muted-foreground mb-2">
-                  Test the attendance marking system:
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    // Simulate a QR scan with a test user ID
-                    const testUserId = '50acc27e-e251-4f9f-9b91-86655bc573d0'; // Test Student
-                    const testLocation = {
-                      latitude: 37.7749,
-                      longitude: -122.4194,
-                      accuracy: 10
-                    };
-                    console.log('Testing attendance marking with:', testUserId);
-                    handleScanSuccess(`${testUserId}-teststudent@ace.edu-student`, testLocation);
-                  }}
-                  data-testid="button-test-scan"
-                >
-                  Test Attendance Marking
-                </Button>
-              </div>
             </CardContent>
           </Card>
 

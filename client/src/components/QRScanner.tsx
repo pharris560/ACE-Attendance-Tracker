@@ -2,20 +2,30 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Camera, CameraOff, CheckCircle, XCircle } from "lucide-react";
+import { Camera, CameraOff, CheckCircle, XCircle, MapPin } from "lucide-react";
 import Webcam from "react-webcam";
 import QrScanner from "qr-scanner";
 
-interface QRScannerProps {
-  onScanSuccess?: (result: string) => void;
-  onScanError?: (error: string) => void;
+interface LocationData {
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+  address?: string;
 }
 
-export default function QRScanner({ onScanSuccess, onScanError }: QRScannerProps) {
+interface QRScannerProps {
+  onScanSuccess?: (result: string, location?: LocationData) => void;
+  onScanError?: (error: string) => void;
+  captureLocation?: boolean;
+}
+
+export default function QRScanner({ onScanSuccess, onScanError, captureLocation = true }: QRScannerProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [lastResult, setLastResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
   const webcamRef = useRef<Webcam>(null);
   const scannerRef = useRef<QrScanner | null>(null);
 
@@ -25,12 +35,28 @@ export default function QRScanner({ onScanSuccess, onScanError }: QRScannerProps
       .then(() => setHasPermission(true))
       .catch(() => setHasPermission(false));
 
+    // Check and request location permission if needed
+    if (captureLocation && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocationPermission(true);
+          setCurrentLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+          });
+        },
+        () => setLocationPermission(false),
+        { enableHighAccuracy: true }
+      );
+    }
+
     return () => {
       if (scannerRef.current) {
         scannerRef.current.stop();
       }
     };
-  }, []);
+  }, [captureLocation]);
 
   const startScanning = async () => {
     if (!webcamRef.current?.video) return;
@@ -47,10 +73,33 @@ export default function QRScanner({ onScanSuccess, onScanError }: QRScannerProps
       
       scannerRef.current = new QrScanner(
         video,
-        (result) => {
+        async (result) => {
           console.log('QR Code scanned:', result.data);
           setLastResult(result.data);
-          onScanSuccess?.(result.data);
+          
+          // Capture current location if enabled
+          if (captureLocation && navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+              (position) => {
+                const location: LocationData = {
+                  latitude: position.coords.latitude,
+                  longitude: position.coords.longitude,
+                  accuracy: position.coords.accuracy,
+                };
+                setCurrentLocation(location);
+                onScanSuccess?.(result.data, location);
+              },
+              (error) => {
+                console.error('Location error:', error);
+                // Still process scan even if location fails
+                onScanSuccess?.(result.data);
+              },
+              { enableHighAccuracy: true, timeout: 5000 }
+            );
+          } else {
+            onScanSuccess?.(result.data);
+          }
+          
           setIsScanning(false);
         },
         {
@@ -169,6 +218,12 @@ export default function QRScanner({ onScanSuccess, onScanError }: QRScannerProps
             <AlertDescription>
               <div className="font-medium">Scanned successfully!</div>
               <div className="text-sm mt-1 font-mono break-all">{lastResult}</div>
+              {currentLocation && (
+                <div className="text-sm mt-2 flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  <span>Location captured (±{Math.round(currentLocation.accuracy)}m)</span>
+                </div>
+              )}
             </AlertDescription>
           </Alert>
         )}

@@ -4,7 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import QRScanner from "@/components/QRScanner";
-import { QrCode, CheckCircle, XCircle, Clock, User } from "lucide-react";
+import { QrCode, CheckCircle, XCircle, Clock, User, MapPin } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Scanner() {
   const [scanHistory, setScanHistory] = useState<Array<{
@@ -13,22 +16,94 @@ export default function Scanner() {
     timestamp: Date;
     status: 'success' | 'error';
     userName?: string;
+    location?: {
+      latitude: number;
+      longitude: number;
+      accuracy: number;
+    };
   }>>([]);
+  const { toast } = useToast();
 
-  const handleScanSuccess = (result: string) => {
-    console.log('QR scan successful:', result);
+  const markAttendanceMutation = useMutation({
+    mutationFn: async (data: {
+      studentId: string;
+      classId?: string;
+      status: 'present' | 'absent' | 'tardy' | 'excused';
+      location?: any;
+    }) => {
+      // Get current date in YYYY-MM-DD format
+      const today = new Date().toISOString().split('T')[0];
+      
+      // For now, use a default class ID if not provided
+      const classId = data.classId || 'default-class';
+      
+      return apiRequest('/api/attendance', {
+        method: 'POST',
+        body: {
+          studentId: data.studentId,
+          classId: classId,
+          date: today,
+          status: data.status,
+          notes: 'Marked via QR code scanner',
+          ...(data.location && {
+            latitude: data.location.latitude,
+            longitude: data.location.longitude,
+            locationAccuracy: data.location.accuracy,
+            checkInTime: new Date().toISOString(),
+          }),
+        },
+      });
+    },
+    onSuccess: (data, variables) => {
+      toast({
+        title: "Attendance Marked",
+        description: `Successfully checked in ${variables.studentId}`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Failed to mark attendance",
+        description: error.message || "Please try again",
+      });
+    },
+  });
+
+  const handleScanSuccess = async (result: string, location?: any) => {
+    console.log('QR scan successful:', result, 'Location:', location);
     
-    // Todo: Process QR code result and mark attendance in backend
-    // Mock processing for now
-    const userName = result.includes('STU') ? 'Student User' : 'Staff User';
+    // Parse QR code data (format: studentId-email-role)
+    const parts = result.split('-');
+    const studentId = parts[0] || result;
+    const email = parts[1];
+    const role = parts[2];
     
-    setScanHistory(prev => [{
-      id: Date.now().toString(),
-      result,
-      timestamp: new Date(),
-      status: 'success',
-      userName
-    }, ...prev.slice(0, 9)]); // Keep last 10 scans
+    // Mark attendance in backend
+    try {
+      await markAttendanceMutation.mutateAsync({
+        studentId,
+        status: 'present',
+        location,
+      });
+      
+      setScanHistory(prev => [{
+        id: Date.now().toString(),
+        result,
+        timestamp: new Date(),
+        status: 'success',
+        userName: email || studentId,
+        location,
+      }, ...prev.slice(0, 9)]); // Keep last 10 scans
+    } catch (error) {
+      console.error('Failed to mark attendance:', error);
+      setScanHistory(prev => [{
+        id: Date.now().toString(),
+        result,
+        timestamp: new Date(),
+        status: 'error',
+        userName: email || studentId,
+      }, ...prev.slice(0, 9)]);
+    }
   };
 
   const handleScanError = (error: string) => {
@@ -73,6 +148,7 @@ export default function Scanner() {
               <QRScanner
                 onScanSuccess={handleScanSuccess}
                 onScanError={handleScanError}
+                captureLocation={true}
               />
             </CardContent>
           </Card>
@@ -177,6 +253,12 @@ export default function Scanner() {
                           <div className="mt-1">
                             {scan.timestamp.toLocaleString()}
                           </div>
+                          {scan.location && (
+                            <div className="mt-1 flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />
+                              <span>Location: ±{Math.round(scan.location.accuracy)}m</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

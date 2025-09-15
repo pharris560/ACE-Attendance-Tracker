@@ -80,8 +80,11 @@ export default function AttendanceMarker({
     setSelectedStatus(null);
   };
 
-  const openNotesDialog = (status: AttendanceStatus) => {
-    setSelectedStatus(status);
+  const openNotesDialog = () => {
+    // Pre-select current status if one exists
+    if (currentStatus) {
+      setSelectedStatus(currentStatus);
+    }
     setDialogOpen(true);
   };
 
@@ -203,7 +206,10 @@ export default function AttendanceMarker({
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label>Attendance Status</Label>
+                <Label>Attendance Status *</Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Select an attendance status to enable saving
+                </p>
                 <div className="grid grid-cols-2 gap-2 mt-2">
                   {["present", "absent", "tardy", "excused"].map((status) => {
                     const getButtonStyling = (btnStatus: string, isSelected: boolean) => {
@@ -276,8 +282,9 @@ export default function AttendanceMarker({
                   onClick={handleMarkWithNotes}
                   disabled={!selectedStatus || isLoading}
                   data-testid="button-save-attendance"
+                  className={!selectedStatus ? "opacity-50 cursor-not-allowed" : ""}
                 >
-                  {isLoading ? "Saving..." : "Save Attendance"}
+                  {isLoading ? "Saving..." : !selectedStatus ? "Select Status to Save" : "Save Attendance"}
                 </Button>
               </div>
             </div>

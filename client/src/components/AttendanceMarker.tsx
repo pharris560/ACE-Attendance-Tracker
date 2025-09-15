@@ -121,7 +121,11 @@ export default function AttendanceMarker({
             variant={currentStatus === "present" ? "default" : "outline"}
             onClick={() => handleQuickMark("present")}
             disabled={isLoading}
-            className="flex items-center gap-1 transition-all duration-200 hover:bg-green-500 hover:text-white hover:border-green-500 hover:scale-105 active:scale-95"
+            className={`flex items-center gap-1 transition-all duration-200 hover:scale-105 active:scale-95 ${
+              currentStatus === "present" 
+                ? "bg-green-500 text-white border-green-500 hover:bg-green-600" 
+                : "hover:bg-green-500 hover:text-white hover:border-green-500"
+            }`}
             data-testid={`button-present-${student.id}`}
           >
             <Check className="h-3 w-3" />
@@ -133,7 +137,11 @@ export default function AttendanceMarker({
             variant={currentStatus === "absent" ? "default" : "outline"}
             onClick={() => handleQuickMark("absent")}
             disabled={isLoading}
-            className="flex items-center gap-1 transition-all duration-200 hover:bg-red-400 hover:text-white hover:border-red-400 hover:scale-105 active:scale-95"
+            className={`flex items-center gap-1 transition-all duration-200 hover:scale-105 active:scale-95 ${
+              currentStatus === "absent" 
+                ? "bg-red-400 text-white border-red-400 hover:bg-red-500" 
+                : "hover:bg-red-400 hover:text-white hover:border-red-400"
+            }`}
             data-testid={`button-absent-${student.id}`}
           >
             <X className="h-3 w-3" />
@@ -145,7 +153,11 @@ export default function AttendanceMarker({
             variant={currentStatus === "tardy" ? "default" : "outline"}
             onClick={() => handleQuickMark("tardy")}
             disabled={isLoading}
-            className="flex items-center gap-1 transition-all duration-200 hover:bg-yellow-400 hover:text-gray-900 hover:border-yellow-400 hover:scale-105 active:scale-95"
+            className={`flex items-center gap-1 transition-all duration-200 hover:scale-105 active:scale-95 ${
+              currentStatus === "tardy" 
+                ? "bg-yellow-400 text-gray-900 border-yellow-400 hover:bg-yellow-500" 
+                : "hover:bg-yellow-400 hover:text-gray-900 hover:border-yellow-400"
+            }`}
             data-testid={`button-tardy-${student.id}`}
           >
             <Clock className="h-3 w-3" />
@@ -157,7 +169,11 @@ export default function AttendanceMarker({
             variant={currentStatus === "excused" ? "default" : "outline"}
             onClick={() => handleQuickMark("excused")}
             disabled={isLoading}
-            className="flex items-center gap-1 transition-all duration-200 hover:bg-blue-400 hover:text-white hover:border-blue-400 hover:scale-105 active:scale-95"
+            className={`flex items-center gap-1 transition-all duration-200 hover:scale-105 active:scale-95 ${
+              currentStatus === "excused" 
+                ? "bg-blue-400 text-white border-blue-400 hover:bg-blue-500" 
+                : "hover:bg-blue-400 hover:text-white hover:border-blue-400"
+            }`}
             data-testid={`button-excused-${student.id}`}
           >
             <AlertCircle className="h-3 w-3" />
@@ -190,18 +206,28 @@ export default function AttendanceMarker({
                 <Label>Attendance Status</Label>
                 <div className="grid grid-cols-2 gap-2 mt-2">
                   {["present", "absent", "tardy", "excused"].map((status) => {
-                    const getButtonAnimation = (btnStatus: string) => {
+                    const getButtonStyling = (btnStatus: string, isSelected: boolean) => {
+                      const baseClasses = "flex items-center gap-1 transition-all duration-200 hover:scale-105 active:scale-95";
+                      
                       switch (btnStatus) {
                         case "present":
-                          return "transition-all duration-200 hover:bg-green-500 hover:text-white hover:border-green-500 hover:scale-105 active:scale-95";
+                          return `${baseClasses} ${isSelected 
+                            ? "bg-green-500 text-white border-green-500 hover:bg-green-600" 
+                            : "hover:bg-green-500 hover:text-white hover:border-green-500"}`;
                         case "absent":
-                          return "transition-all duration-200 hover:bg-red-400 hover:text-white hover:border-red-400 hover:scale-105 active:scale-95";
+                          return `${baseClasses} ${isSelected 
+                            ? "bg-red-400 text-white border-red-400 hover:bg-red-500" 
+                            : "hover:bg-red-400 hover:text-white hover:border-red-400"}`;
                         case "tardy":
-                          return "transition-all duration-200 hover:bg-yellow-400 hover:text-gray-900 hover:border-yellow-400 hover:scale-105 active:scale-95";
+                          return `${baseClasses} ${isSelected 
+                            ? "bg-yellow-400 text-gray-900 border-yellow-400 hover:bg-yellow-500" 
+                            : "hover:bg-yellow-400 hover:text-gray-900 hover:border-yellow-400"}`;
                         case "excused":
-                          return "transition-all duration-200 hover:bg-blue-400 hover:text-white hover:border-blue-400 hover:scale-105 active:scale-95";
+                          return `${baseClasses} ${isSelected 
+                            ? "bg-blue-400 text-white border-blue-400 hover:bg-blue-500" 
+                            : "hover:bg-blue-400 hover:text-white hover:border-blue-400"}`;
                         default:
-                          return "transition-all duration-200 hover:scale-105 active:scale-95";
+                          return `${baseClasses}`;
                       }
                     };
                     
@@ -211,7 +237,7 @@ export default function AttendanceMarker({
                       size="sm"
                       variant={selectedStatus === status ? "default" : "outline"}
                       onClick={() => setSelectedStatus(status as AttendanceStatus)}
-                      className={`flex items-center gap-1 ${getButtonAnimation(status)}`}
+                      className={getButtonStyling(status, selectedStatus === status)}
                       data-testid={`dialog-button-${status}`}
                     >
                       {getStatusIcon(status as AttendanceStatus)}

@@ -433,10 +433,10 @@ export default function ClassAttendance() {
                     date={dateString}
                     currentStatus={attendanceMap.get(student.id)}
                     locationData={attendanceRecord ? {
-                      latitude: attendanceRecord.latitude,
-                      longitude: attendanceRecord.longitude,
-                      locationAccuracy: attendanceRecord.locationAccuracy,
-                      locationAddress: attendanceRecord.locationAddress,
+                      latitude: attendanceRecord.latitude || undefined,
+                      longitude: attendanceRecord.longitude || undefined,
+                      locationAccuracy: attendanceRecord.locationAccuracy || undefined,
+                      locationAddress: attendanceRecord.locationAddress || undefined,
                     } : undefined}
                     onMarkAttendance={handleMarkAttendance}
                     isLoading={markAttendanceMutation.isPending}

@@ -135,6 +135,18 @@ export default function ClassAttendance() {
   };
 
   const handleBulkMarkAttendance = async (status: AttendanceStatus) => {
+    // Store previous attendance map for potential rollback
+    const previousAttendanceMap = new Map(attendanceMap);
+    
+    // Optimistic update: immediately mark all students with the selected status
+    setAttendanceMap(prev => {
+      const newMap = new Map(prev);
+      students.forEach(student => {
+        newMap.set(student.id, status);
+      });
+      return newMap;
+    });
+
     try {
       await apiRequest("POST", `/api/attendance/bulk`, {
         classId,
@@ -153,6 +165,9 @@ export default function ClassAttendance() {
         description: `Marked all students as ${status}.`,
       });
     } catch (error: any) {
+      // Rollback optimistic update on error
+      setAttendanceMap(previousAttendanceMap);
+      
       toast({
         title: "Error",
         description: error.message || "Failed to bulk mark attendance.",

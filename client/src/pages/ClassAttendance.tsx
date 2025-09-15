@@ -94,15 +94,10 @@ export default function ClassAttendance() {
 
   // Build attendance map from records
   useEffect(() => {
-    console.log("📊 AttendanceMap useEffect triggered:", { 
-      attendanceRecordsLength: attendanceRecords.length, 
-      records: attendanceRecords 
-    });
     const newAttendanceMap = new Map<string, AttendanceStatus>();
     attendanceRecords.forEach((record) => {
       newAttendanceMap.set(record.studentId, record.status as AttendanceStatus);
     });
-    console.log("📊 New attendanceMap created:", Array.from(newAttendanceMap.entries()));
     setAttendanceMap(newAttendanceMap);
   }, [attendanceRecords]);
 
@@ -111,10 +106,7 @@ export default function ClassAttendance() {
   };
 
   const handleBulkMarkAttendance = async (status: AttendanceStatus) => {
-    console.log("🔥 BULK ATTENDANCE FUNCTION CALLED!", status);
     try {
-      console.log("Before bulk attendance:", { classId, dateString, status, studentsCount: students.length });
-      
       await apiRequest("POST", `/api/attendance/bulk`, {
         classId,
         date: dateString,
@@ -124,16 +116,8 @@ export default function ClassAttendance() {
         })),
       });
 
-      console.log("Bulk attendance API call successful, invalidating queries...");
-      console.log("Query keys being invalidated:", [
-        ["/api/attendance/class", classId, "date", dateString],
-        ["/api/attendance/stats", classId]
-      ]);
-      
       queryClient.invalidateQueries({ queryKey: ["/api/attendance/class", classId, "date", dateString] });
       queryClient.invalidateQueries({ queryKey: ["/api/attendance/stats", classId] });
-      
-      console.log("Cache invalidation completed");
       
       toast({
         title: "Success",

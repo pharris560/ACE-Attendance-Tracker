@@ -121,7 +121,7 @@ export default function AttendanceMarker({
             variant={currentStatus === "present" ? "default" : "outline"}
             onClick={() => handleQuickMark("present")}
             disabled={isLoading}
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 transition-all duration-200 hover:bg-green-500 hover:text-white hover:border-green-500 hover:scale-105 active:scale-95"
             data-testid={`button-present-${student.id}`}
           >
             <Check className="h-3 w-3" />
@@ -133,7 +133,7 @@ export default function AttendanceMarker({
             variant={currentStatus === "absent" ? "default" : "outline"}
             onClick={() => handleQuickMark("absent")}
             disabled={isLoading}
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 transition-all duration-200 hover:bg-red-400 hover:text-white hover:border-red-400 hover:scale-105 active:scale-95"
             data-testid={`button-absent-${student.id}`}
           >
             <X className="h-3 w-3" />
@@ -145,7 +145,7 @@ export default function AttendanceMarker({
             variant={currentStatus === "tardy" ? "default" : "outline"}
             onClick={() => handleQuickMark("tardy")}
             disabled={isLoading}
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 transition-all duration-200 hover:bg-yellow-400 hover:text-gray-900 hover:border-yellow-400 hover:scale-105 active:scale-95"
             data-testid={`button-tardy-${student.id}`}
           >
             <Clock className="h-3 w-3" />
@@ -157,7 +157,7 @@ export default function AttendanceMarker({
             variant={currentStatus === "excused" ? "default" : "outline"}
             onClick={() => handleQuickMark("excused")}
             disabled={isLoading}
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 transition-all duration-200 hover:bg-blue-400 hover:text-white hover:border-blue-400 hover:scale-105 active:scale-95"
             data-testid={`button-excused-${student.id}`}
           >
             <AlertCircle className="h-3 w-3" />
@@ -189,19 +189,36 @@ export default function AttendanceMarker({
               <div>
                 <Label>Attendance Status</Label>
                 <div className="grid grid-cols-2 gap-2 mt-2">
-                  {["present", "absent", "tardy", "excused"].map((status) => (
+                  {["present", "absent", "tardy", "excused"].map((status) => {
+                    const getButtonAnimation = (btnStatus: string) => {
+                      switch (btnStatus) {
+                        case "present":
+                          return "transition-all duration-200 hover:bg-green-500 hover:text-white hover:border-green-500 hover:scale-105 active:scale-95";
+                        case "absent":
+                          return "transition-all duration-200 hover:bg-red-400 hover:text-white hover:border-red-400 hover:scale-105 active:scale-95";
+                        case "tardy":
+                          return "transition-all duration-200 hover:bg-yellow-400 hover:text-gray-900 hover:border-yellow-400 hover:scale-105 active:scale-95";
+                        case "excused":
+                          return "transition-all duration-200 hover:bg-blue-400 hover:text-white hover:border-blue-400 hover:scale-105 active:scale-95";
+                        default:
+                          return "transition-all duration-200 hover:scale-105 active:scale-95";
+                      }
+                    };
+                    
+                    return (
                     <Button
                       key={status}
                       size="sm"
                       variant={selectedStatus === status ? "default" : "outline"}
                       onClick={() => setSelectedStatus(status as AttendanceStatus)}
-                      className="flex items-center gap-1"
+                      className={`flex items-center gap-1 ${getButtonAnimation(status)}`}
                       data-testid={`dialog-button-${status}`}
                     >
                       {getStatusIcon(status as AttendanceStatus)}
                       <span className="capitalize">{status}</span>
                     </Button>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
               

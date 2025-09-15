@@ -36,7 +36,7 @@ export default function Scanner() {
       
       // Use the first available class (Mathematics 101) for demo purposes
       // In production, you'd want to let the user select a class or determine it from context
-      const classId = data.classId || '69d3edce-b628-4ed2-9ee8-0ad7a855b827'; // Mathematics 101
+      const classId = data.classId || 'test-class-1'; // Mathematics 101
       
       return apiRequest('POST', '/api/attendance', {
         studentId: data.studentId,
@@ -78,11 +78,20 @@ export default function Scanner() {
     
     // Mark attendance in backend
     try {
-      await markAttendanceMutation.mutateAsync({
-        studentId: userId, // Using the user ID from QR code
+      // First, try to find the student by email
+      // If email is available, we'll use it to find the correct student
+      const attendanceData: any = {
+        studentId: userId, // This might be a UUID
         status: 'present',
         location,
-      });
+      };
+      
+      // If we have an email, send it along for backend to find the student
+      if (email) {
+        attendanceData.email = email;
+      }
+      
+      await markAttendanceMutation.mutateAsync(attendanceData);
       
       setScanHistory(prev => [{
         id: Date.now().toString(),

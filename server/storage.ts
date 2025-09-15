@@ -382,6 +382,12 @@ export class MemStorage implements IStorage {
     );
   }
 
+  async getStudentByEmail(email: string): Promise<Student | undefined> {
+    return Array.from(this.students.values()).find(
+      (student) => student.email === email
+    );
+  }
+
   async getStudentsByUser(userId: string): Promise<Student[]> {
     return Array.from(this.students.values()).filter(
       (student) => student.createdBy === userId

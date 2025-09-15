@@ -614,7 +614,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/attendance - Mark attendance (public access)
   app.post("/api/attendance", async (req, res) => {
     try {
-      const validatedData = markAttendanceSchema.parse(req.body);
+      let validatedData = markAttendanceSchema.parse(req.body);
+      
+      // Check if an email was provided (from QR code scan)
+      // Use it to find the correct student record
+      if (req.body.email) {
+        const student = await storage.getStudentByEmail(req.body.email);
+        if (student) {
+          // Replace the UUID with the actual student ID
+          validatedData = {
+            ...validatedData,
+            studentId: student.id
+          };
+        } else {
+          return res.status(404).json({ 
+            error: `Student not found with email: ${req.body.email}` 
+          });
+        }
+      } else {
+        // Check if studentId looks like a UUID (from QR code scan)
+        // If so, it's actually a user ID, not a student ID
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(validatedData.studentId)) {
+          // The QR code contained a user UUID but no email
+          // Try to find if there's a student with this ID
+          let student = await storage.getStudent(validatedData.studentId);
+          
+          if (!student) {
+            return res.status(404).json({ 
+              error: "Student not found. QR code may be from a user without a student record." 
+            });
+          }
+        }
+      }
       
       // Convert numeric strings if location data is provided
       const attendanceData: any = {

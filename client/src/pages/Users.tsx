@@ -5,6 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import UserCard from "@/components/UserCard";
+import AddUserDialog from "@/components/AddUserDialog";
+import ImportUsersDialog from "@/components/ImportUsersDialog";
+import ExportUsersButton from "@/components/ExportUsersButton";
 import { Search, Plus, Download, Upload, Users as UsersIcon, GraduationCap, Briefcase } from "lucide-react";
 
 export default function Users() {
@@ -90,19 +93,10 @@ export default function Users() {
     // Todo: Generate and display QR code
   };
 
-  const handleAddUser = () => {
-    console.log('Adding new user');
-    // Todo: Navigate to add user form
-  };
-
-  const handleImportUsers = () => {
-    console.log('Importing users from CSV');
-    // Todo: Show import dialog
-  };
-
-  const handleExportUsers = () => {
-    console.log('Exporting users data');
-    // Todo: Export users to CSV
+  const handleRefreshUsers = () => {
+    // Callback for when users are added or imported
+    // Todo: Refresh user data from backend
+    console.log('Refreshing user data');
   };
 
   return (
@@ -116,29 +110,9 @@ export default function Users() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={handleImportUsers}
-            data-testid="button-import-users"
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            Import
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handleExportUsers}
-            data-testid="button-export-users"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-          <Button
-            onClick={handleAddUser}
-            data-testid="button-add-user"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add User
-          </Button>
+          <ImportUsersDialog onUsersImported={handleRefreshUsers} />
+          <ExportUsersButton users={mockUsers} />
+          <AddUserDialog onUserAdded={handleRefreshUsers} />
         </div>
       </div>
 
@@ -238,10 +212,7 @@ export default function Users() {
               <p className="text-muted-foreground text-center mb-4">
                 {searchTerm ? "No users match your search criteria." : "No users have been added yet."}
               </p>
-              <Button onClick={handleAddUser}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Your First User
-              </Button>
+              <AddUserDialog onUserAdded={handleRefreshUsers} />
             </CardContent>
           </Card>
         ) : (

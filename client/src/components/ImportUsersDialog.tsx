@@ -11,9 +11,19 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Upload, FileText, AlertTriangle, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { parseCSV, generateCSV, downloadCSV, validateHeaders } from "@/lib/csv-utils";
 
 interface ImportUsersDialogProps {
   onUsersImported?: () => void;
+}
+
+interface UserImportData {
+  name: string;
+  email: string;
+  phone?: string;
+  role: 'student' | 'staff';
+  class?: string;
+  department?: string;
 }
 
 export default function ImportUsersDialog({ onUsersImported }: ImportUsersDialogProps) {
@@ -46,49 +56,47 @@ export default function ImportUsersDialog({ onUsersImported }: ImportUsersDialog
 
     try {
       const text = await file.text();
-      const lines = text.split('\n').filter(line => line.trim());
+      const { headers, data, errors: parseErrors } = parseCSV(text);
       
-      if (lines.length < 2) {
+      if (data.length === 0) {
         throw new Error("CSV file must contain a header row and at least one data row");
       }
 
-      // Parse CSV (basic implementation)
-      const headers = lines[0].split(',').map(h => h.trim());
+      // Check required headers
       const requiredHeaders = ['name', 'email', 'phone', 'role'];
+      const missingHeaders = validateHeaders(headers, requiredHeaders);
       
-      const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
       if (missingHeaders.length > 0) {
         throw new Error(`Missing required columns: ${missingHeaders.join(', ')}`);
       }
 
-      const users = [];
-      const errors: string[] = [];
+      const users: UserImportData[] = [];
+      const errors: string[] = [...parseErrors];
 
-      for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(',').map(v => v.trim());
-        if (values.length !== headers.length) {
-          errors.push(`Row ${i + 1}: Invalid number of columns`);
-          continue;
-        }
-
-        const user: any = {};
-        headers.forEach((header, index) => {
-          user[header] = values[index];
-        });
-
+      data.forEach((row, index) => {
         // Basic validation
-        if (!user.name || !user.email || !user.role) {
-          errors.push(`Row ${i + 1}: Missing required fields`);
-          continue;
+        if (!row.name || !row.email || !row.role) {
+          errors.push(`Row ${index + 2}: Missing required fields`);
+          return;
         }
 
-        if (!['student', 'staff'].includes(user.role)) {
-          errors.push(`Row ${i + 1}: Invalid role (must be 'student' or 'staff')`);
-          continue;
+        if (!['student', 'staff'].includes(row.role)) {
+          errors.push(`Row ${index + 2}: Invalid role (must be 'student' or 'staff')`);
+          return;
         }
+
+        // Convert the row to UserImportData with proper types
+        const user: UserImportData = {
+          name: row.name,
+          email: row.email,
+          phone: row.phone || undefined,
+          role: row.role as 'student' | 'staff',
+          class: row.class || undefined,
+          department: row.department || undefined,
+        };
 
         users.push(user);
-      }
+      })
 
       // TODO: Replace with actual API call to import users
       console.log("Importing users:", users);
@@ -138,19 +146,28 @@ export default function ImportUsersDialog({ onUsersImported }: ImportUsersDialog
   };
 
   const downloadTemplate = () => {
-    const csvContent = "name,email,phone,role,class,department\n" +
-                      "John Doe,john.doe@school.edu,+1 (555) 123-4567,student,Mathematics 101,\n" +
-                      "Jane Smith,jane.smith@school.edu,+1 (555) 234-5678,staff,,Science";
+    const headers = ['name', 'email', 'phone', 'role', 'class', 'department'];
+    const sampleData = [
+      {
+        name: 'John Doe',
+        email: 'john.doe@school.edu',
+        phone: '+1 (555) 123-4567',
+        role: 'student',
+        class: 'Mathematics 101',
+        department: ''
+      },
+      {
+        name: 'Jane Smith',
+        email: 'jane.smith@school.edu',
+        phone: '+1 (555) 234-5678',
+        role: 'staff',
+        class: '',
+        department: 'Science'
+      }
+    ];
     
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'users_template.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+    const csvContent = generateCSV(headers, sampleData);
+    downloadCSV('users_template.csv', csvContent);
   };
 
   return (

@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Users, Clock, Edit, Trash2, BookOpen, UserCheck } from "lucide-react";
+import { Users, Clock, Edit, Trash2, BookOpen, UserCheck, Upload, Download } from "lucide-react";
 
 interface ClassCardProps {
   id: string;
@@ -17,6 +17,8 @@ interface ClassCardProps {
   onDelete?: (id: string) => void;
   onViewDetails?: (id: string) => void;
   onManageAttendance?: (id: string) => void;
+  onImportStudents?: (id: string, className: string) => void;
+  onExportStudents?: (id: string, className: string) => void;
 }
 
 export default function ClassCard({
@@ -32,7 +34,9 @@ export default function ClassCard({
   onEdit,
   onDelete,
   onViewDetails,
-  onManageAttendance
+  onManageAttendance,
+  onImportStudents,
+  onExportStudents
 }: ClassCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -113,11 +117,11 @@ export default function ClassCard({
           />
         </div>
         
-        <div className="flex gap-2 pt-2">
+        <div className="flex gap-2 pt-2 flex-wrap">
           <Button
             size="sm"
             variant="outline"
-            className="flex-1 text-xs"
+            className="flex-1 text-xs min-w-fit"
             onClick={() => onViewDetails?.(id)}
             data-testid={`button-view-details-${id}`}
           >
@@ -134,6 +138,24 @@ export default function ClassCard({
               Attendance
             </Button>
           )}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => onImportStudents?.(id, name)}
+            title="Import students to this class"
+            data-testid={`button-import-students-${id}`}
+          >
+            <Upload className="h-4 w-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => onExportStudents?.(id, name)}
+            title="Export students from this class"
+            data-testid={`button-export-students-${id}`}
+          >
+            <Download className="h-4 w-4" />
+          </Button>
           <Button
             size="sm"
             variant="ghost"

@@ -17,6 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { Upload, FileSpreadsheet, Check, X, AlertTriangle, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { parseCSV, generateCSV, downloadCSV, validateHeaders } from "@/lib/csv-utils";
 
 interface ParsedClass {
   name: string;
@@ -64,79 +65,87 @@ export default function ImportClassesDialog({ open, onOpenChange }: ImportClasse
 
   // Download CSV template
   const handleDownloadTemplate = () => {
-    const csvContent = [
-      "name,instructor,capacity,days,time,status,description,location",
-      "Mathematics 101,Dr. Smith,30,monday,9:00 AM,active,Introduction to Algebra,Room 201",
-      "Physics Advanced,Prof. Johnson,25,tuesday,2:00 PM,active,Advanced Physics Concepts,Lab 101",
-      "English Literature,Ms. Davis,35,wednesday,11:00 AM,active,Classic Literature Analysis,Room 301"
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'class_import_template.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+    const headers = ['name', 'instructor', 'capacity', 'days', 'time', 'status', 'description', 'location'];
+    const sampleData = [
+      {
+        name: 'Mathematics 101',
+        instructor: 'Dr. Smith',
+        capacity: '30',
+        days: 'monday',
+        time: '9:00 AM',
+        status: 'active',
+        description: 'Introduction to Algebra',
+        location: 'Room 201'
+      },
+      {
+        name: 'Physics Advanced',
+        instructor: 'Prof. Johnson',
+        capacity: '25',
+        days: 'tuesday',
+        time: '2:00 PM',
+        status: 'active',
+        description: 'Advanced Physics Concepts',
+        location: 'Lab 101'
+      },
+      {
+        name: 'English Literature',
+        instructor: 'Ms. Davis',
+        capacity: '35',
+        days: 'wednesday',
+        time: '11:00 AM',
+        status: 'active',
+        description: 'Classic Literature Analysis',
+        location: 'Room 301'
+      }
+    ];
+    
+    const csvContent = generateCSV(headers, sampleData);
+    downloadCSV('class_import_template.csv', csvContent);
   };
 
-  // Parse CSV file
-  const parseCSV = (content: string): ParsedClass[] => {
-    const lines = content.trim().split('\n');
-    const headers = lines[0].split(',').map(h => h.trim());
-    const data: ParsedClass[] = [];
-    const errors: string[] = [];
+  // Process CSV content
+  const processCSVContent = (content: string): ParsedClass[] => {
+    const { headers, data, errors: parseErrors } = parseCSV(content);
+    const processedData: ParsedClass[] = [];
+    const allErrors: string[] = [...parseErrors];
 
     // Check required headers
     const requiredHeaders = ['name', 'instructor', 'capacity', 'days', 'time', 'status'];
-    const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+    const missingHeaders = validateHeaders(headers, requiredHeaders);
     
     if (missingHeaders.length > 0) {
-      errors.push(`Missing required headers: ${missingHeaders.join(', ')}`);
-      setValidationErrors(errors);
+      allErrors.push(`Missing required headers: ${missingHeaders.join(', ')}`);
+      setValidationErrors(allErrors);
       return [];
     }
 
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim());
-      if (values.length !== headers.length) {
-        errors.push(`Row ${i + 1}: Column count mismatch`);
-        continue;
-      }
-
-      const row: any = {};
-      headers.forEach((header, index) => {
-        row[header] = values[index];
-      });
-
+    data.forEach((row, index) => {
       // Validate and parse data
       try {
         const capacity = parseInt(row.capacity);
         if (isNaN(capacity) || capacity <= 0) {
-          errors.push(`Row ${i + 1}: Invalid capacity "${row.capacity}"`);
-          continue;
+          allErrors.push(`Row ${index + 2}: Invalid capacity "${row.capacity}"`);
+          return;
         }
 
         if (!row.name || !row.instructor || !row.days || !row.time) {
-          errors.push(`Row ${i + 1}: Missing required fields`);
-          continue;
+          allErrors.push(`Row ${index + 2}: Missing required fields`);
+          return;
         }
 
         const validStatuses = ['active', 'inactive', 'completed'];
         if (!validStatuses.includes(row.status.toLowerCase())) {
-          errors.push(`Row ${i + 1}: Invalid status "${row.status}". Must be one of: ${validStatuses.join(', ')}`);
-          continue;
+          allErrors.push(`Row ${index + 2}: Invalid status "${row.status}". Must be one of: ${validStatuses.join(', ')}`);
+          return;
         }
 
         const validDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
         if (!validDays.includes(row.days.toLowerCase())) {
-          errors.push(`Row ${i + 1}: Invalid day "${row.days}". Must be one of: ${validDays.join(', ')}`);
-          continue;
+          allErrors.push(`Row ${index + 2}: Invalid day "${row.days}". Must be one of: ${validDays.join(', ')}`);
+          return;
         }
 
-        data.push({
+        processedData.push({
           name: row.name,
           instructor: row.instructor,
           capacity,
@@ -149,12 +158,12 @@ export default function ImportClassesDialog({ open, onOpenChange }: ImportClasse
           location: row.location || undefined
         });
       } catch (error) {
-        errors.push(`Row ${i + 1}: Parsing error - ${error}`);
+        allErrors.push(`Row ${index + 2}: Parsing error - ${error}`);
       }
-    }
+    });
 
-    setValidationErrors(errors);
-    return data;
+    setValidationErrors(allErrors);
+    return processedData;
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -175,7 +184,7 @@ export default function ImportClassesDialog({ open, onOpenChange }: ImportClasse
     reader.onload = (e) => {
       const content = e.target?.result as string;
       if (content) {
-        const parsed = parseCSV(content);
+        const parsed = processCSVContent(content);
         setParsedData(parsed);
       }
     };
@@ -201,6 +210,10 @@ export default function ImportClassesDialog({ open, onOpenChange }: ImportClasse
             body: JSON.stringify(classData),
           });
 
+          if (response.status === 401) {
+            throw new Error('Authentication required. Please log in to import classes.');
+          }
+          
           if (response.ok) {
             results.success++;
           } else {

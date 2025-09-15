@@ -7,17 +7,26 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import ClassCard from "@/components/ClassCard";
 import ImportClassesDialog from "@/components/ImportClassesDialog";
+import ImportStudentsDialog from "@/components/ImportStudentsDialog";
 import { Search, Plus, Download, Upload, GraduationCap, Users, BookOpen, RefreshCw } from "lucide-react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import { type ClassWithStats } from "@shared/schema";
+import { generateCSV, downloadCSV } from "@/lib/csv-utils";
 
 export default function Classes() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("all");
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [importStudentsDialog, setImportStudentsDialog] = useState<{ open: boolean; classId: string; className: string }>({
+    open: false,
+    classId: "",
+    className: ""
+  });
   const [location, setLocation] = useLocation();
   const { user, isAuthenticated } = useAuth();
+  const { toast } = useToast();
 
   // Fetch classes from backend (allow public access to view classes)
   const { data: classes = [], isLoading: classesLoading, error: classesError } = useQuery<ClassWithStats[]>({
@@ -118,6 +127,77 @@ export default function Classes() {
   const handleExportClasses = () => {
     console.log('Exporting classes data');
     // Todo: Export classes to CSV
+  };
+
+  const handleImportStudents = (classId: string, className: string) => {
+    setImportStudentsDialog({ open: true, classId, className });
+  };
+
+  const handleExportStudents = async (classId: string, className: string) => {
+    try {
+      // Fetch fresh data
+      const response = await fetch('/api/users');
+      
+      // Check for authentication errors
+      if (response.status === 401) {
+        toast({
+          title: "Authentication required",
+          description: "Please log in to export student data",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch users: ${response.statusText}`);
+      }
+      
+      const allUsers = await response.json();
+      
+      // Filter students that belong to this class
+      const classStudents = allUsers.filter((user: any) => 
+        user.role === 'student' && user.class === className
+      );
+      
+      if (classStudents.length === 0) {
+        toast({
+          title: "No students to export",
+          description: `No students are enrolled in ${className}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Prepare data for CSV generation with consistent field names
+      const headers = ['Name', 'Email', 'Phone', 'Student ID', 'Department', 'Class'];
+      const studentData = classStudents.map((student: any) => ({
+        'Name': student.name || '',
+        'Email': student.email || '',
+        'Phone': student.phone || '',
+        'Student ID': student.studentId || '',
+        'Department': student.department || '',
+        'Class': className
+      }));
+
+      // Generate CSV with proper escaping
+      const csvContent = generateCSV(headers, studentData);
+      
+      // Download the CSV file
+      const filename = `${className.replace(/\s+/g, '_')}_students_${new Date().toISOString().split('T')[0]}.csv`;
+      downloadCSV(filename, csvContent);
+
+      toast({
+        title: "Export successful",
+        description: `Exported ${classStudents.length} students from ${className}`,
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: "Export failed",
+        description: error instanceof Error ? error.message : "Failed to export students. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -294,6 +374,8 @@ export default function Classes() {
               onDelete={handleDeleteClass}
               onViewDetails={handleViewDetails}
               onManageAttendance={handleManageAttendance}
+              onImportStudents={handleImportStudents}
+              onExportStudents={handleExportStudents}
             />
           ))
         )}
@@ -327,6 +409,14 @@ export default function Classes() {
       <ImportClassesDialog 
         open={isImportDialogOpen}
         onOpenChange={setIsImportDialogOpen}
+      />
+
+      {/* Import Students Dialog */}
+      <ImportStudentsDialog
+        open={importStudentsDialog.open}
+        onOpenChange={(open) => setImportStudentsDialog({ ...importStudentsDialog, open })}
+        classId={importStudentsDialog.classId}
+        className={importStudentsDialog.className}
       />
     </div>
   );

@@ -58,11 +58,22 @@ export default function AddClass() {
     setIsSubmitting(true);
     
     try {
-      // Todo: Submit data to backend API
-      console.log("Creating new class:", data);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Submit data to backend API
+      const response = await fetch("/api/classes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to create class");
+      }
+
+      console.log("Class created successfully");
       
       // Navigate back to classes page on success
       setLocation("/classes");

@@ -294,13 +294,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Class management routes
   
-  // POST /api/classes - Create new class
-  app.post("/api/classes", requireAuth, async (req, res) => {
+  // POST /api/classes - Create new class (public access)
+  app.post("/api/classes", async (req, res) => {
     try {
-      const authReq = req as AuthenticatedRequest;
       const validatedData = insertClassSchema.parse(req.body);
       
-      const newClass = await storage.createClass(validatedData, authReq.user!.id);
+      // Use a default user ID for public class creation or create anonymously  
+      const defaultUserId = "anonymous";
+      const newClass = await storage.createClass(validatedData, defaultUserId);
       
       res.status(201).json(newClass);
     } catch (error) {

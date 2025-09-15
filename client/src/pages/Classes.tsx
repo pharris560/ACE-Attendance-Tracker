@@ -150,11 +150,11 @@ export default function Classes() {
             Export
           </Button>
           <Button
-            onClick={isAuthenticated ? handleAddClass : () => setLocation("/login")}
+            onClick={handleAddClass}
             data-testid="button-add-class"
           >
             <Plus className="h-4 w-4 mr-2" />
-            {isAuthenticated ? "Add Class" : "Login to Add Class"}
+            Add Class
           </Button>
         </div>
       </div>
@@ -278,9 +278,9 @@ export default function Classes() {
               <p className="text-muted-foreground text-center mb-4">
                 {searchTerm ? "No classes match your search criteria." : "No classes have been created yet."}
               </p>
-              <Button onClick={isAuthenticated ? handleAddClass : () => setLocation("/login")}>
+              <Button onClick={handleAddClass}>
                 <Plus className="h-4 w-4 mr-2" />
-                {isAuthenticated ? "Add Your First Class" : "Login to Add Classes"}
+                Add Your First Class
               </Button>
             </CardContent>
           </Card>

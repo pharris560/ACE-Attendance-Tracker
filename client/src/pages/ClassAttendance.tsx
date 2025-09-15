@@ -67,16 +67,49 @@ export default function ClassAttendance() {
     enabled: !!classId,
   });
 
+  // Function to get current location
+  const getCurrentLocation = (): Promise<GeolocationPosition | null> => {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve(null);
+        return;
+      }
+      
+      navigator.geolocation.getCurrentPosition(
+        (position) => resolve(position),
+        (error) => {
+          console.error("Location error:", error);
+          resolve(null);
+        },
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      );
+    });
+  };
+
   // Mark attendance mutation
   const markAttendanceMutation = useMutation({
-    mutationFn: async ({ studentId, status, notes }: { studentId: string; status: AttendanceStatus; notes?: string }) => {
-      return apiRequest("POST", `/api/attendance`, {
+    mutationFn: async ({ studentId, status, notes, location }: { 
+      studentId: string; 
+      status: AttendanceStatus; 
+      notes?: string;
+      location?: GeolocationPosition | null;
+    }) => {
+      const attendanceData: any = {
         classId,
         studentId,
         date: dateString,
         status,
         notes,
-      });
+      };
+      
+      // Include location data if available
+      if (location) {
+        attendanceData.latitude = location.coords.latitude;
+        attendanceData.longitude = location.coords.longitude;
+        attendanceData.locationAccuracy = location.coords.accuracy;
+      }
+      
+      return apiRequest("POST", `/api/attendance`, attendanceData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/attendance/class", classId, "date", dateString] });
@@ -116,7 +149,9 @@ export default function ClassAttendance() {
     });
 
     try {
-      await markAttendanceMutation.mutateAsync({ studentId, status, notes });
+      // Capture current location before marking attendance
+      const location = await getCurrentLocation();
+      await markAttendanceMutation.mutateAsync({ studentId, status, notes, location });
     } catch (error: any) {
       // Rollback optimistic update on error
       setAttendanceMap(prev => {
@@ -151,13 +186,29 @@ export default function ClassAttendance() {
     });
 
     try {
+      // Capture current location before marking attendance
+      const location = await getCurrentLocation();
+      
+      const records = students.map(student => {
+        const record: any = {
+          studentId: student.id,
+          status,
+        };
+        
+        // Include location data if available
+        if (location) {
+          record.latitude = location.coords.latitude;
+          record.longitude = location.coords.longitude;
+          record.locationAccuracy = location.coords.accuracy;
+        }
+        
+        return record;
+      });
+      
       await apiRequest("POST", `/api/attendance/bulk`, {
         classId,
         date: dateString,
-        records: students.map(student => ({
-          studentId: student.id,
-          status,
-        })),
+        records,
       });
 
       queryClient.invalidateQueries({ queryKey: ["/api/attendance/class", classId, "date", dateString] });

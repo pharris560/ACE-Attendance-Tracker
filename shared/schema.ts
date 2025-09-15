@@ -163,6 +163,9 @@ export const bulkAttendanceSchema = z.object({
     studentId: z.string().min(1, "Student ID is required"),
     status: attendanceStatusSchema,
     notes: z.string().optional(),
+    latitude: z.number().optional(),
+    longitude: z.number().optional(),
+    locationAccuracy: z.number().optional(),
   })),
 });
 

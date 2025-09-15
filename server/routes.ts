@@ -685,12 +685,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = bulkAttendanceSchema.parse(req.body);
       
-      const attendanceRecords = validatedData.records.map(record => ({
-        ...record,
-        classId: validatedData.classId,
-        date: validatedData.date,
-        markedBy: "anonymous", // Default for public access
-      }));
+      const attendanceRecords = validatedData.records.map(record => {
+        const attendanceData: any = {
+          ...record,
+          classId: validatedData.classId,
+          date: validatedData.date,
+          markedBy: "anonymous", // Default for public access
+        };
+        
+        // Convert location fields to strings if present
+        if (record.latitude !== undefined) {
+          attendanceData.latitude = record.latitude.toString();
+        }
+        if (record.longitude !== undefined) {
+          attendanceData.longitude = record.longitude.toString();
+        }
+        if (record.locationAccuracy !== undefined) {
+          attendanceData.locationAccuracy = record.locationAccuracy.toString();
+        }
+        
+        return attendanceData;
+      });
       
       const results = await storage.bulkMarkAttendance(attendanceRecords);
       res.status(201).json(results);

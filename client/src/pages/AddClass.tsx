@@ -58,6 +58,12 @@ export default function AddClass() {
     setIsSubmitting(true);
     
     try {
+      // Convert schedule object to JSON string as expected by backend
+      const submitData = {
+        ...data,
+        schedule: JSON.stringify(data.schedule)
+      };
+
       // Submit data to backend API
       const response = await fetch("/api/classes", {
         method: "POST",
@@ -65,7 +71,7 @@ export default function AddClass() {
           "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify(data),
+        body: JSON.stringify(submitData),
       });
 
       if (!response.ok) {

@@ -128,11 +128,6 @@ const IDCard = forwardRef<HTMLDivElement, IDCardProps>(({
             )}
           </div>
 
-          {/* Footer */}
-          <div className="text-center text-xs text-muted-foreground pt-2 border-t border-primary/20">
-            <p>This card is property of {companyName}</p>
-            <p>Generated on {new Date().toLocaleDateString()}</p>
-          </div>
         </CardContent>
       </Card>
     </div>

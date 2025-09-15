@@ -316,11 +316,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // GET /api/classes - List classes
-  app.get("/api/classes", requireAuth, async (req, res) => {
+  // GET /api/classes - List classes (public access for viewing)
+  app.get("/api/classes", async (req, res) => {
     try {
-      const authReq = req as AuthenticatedRequest;
-      const classes = await storage.getClassesByUser(authReq.user!.id);
+      // Get all classes for public viewing (no authentication required)
+      const classes = await storage.getAllClasses();
       
       res.json(classes);
     } catch (error) {

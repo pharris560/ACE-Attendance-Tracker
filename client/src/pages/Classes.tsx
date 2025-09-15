@@ -17,22 +17,11 @@ export default function Classes() {
   const [location, setLocation] = useLocation();
   const { user, isAuthenticated } = useAuth();
 
-  // Fetch classes from backend
+  // Fetch classes from backend (allow public access to view classes)
   const { data: classes = [], isLoading: classesLoading, error: classesError } = useQuery<ClassWithStats[]>({
     queryKey: ["/api/classes"],
-    enabled: isAuthenticated,
+    // Enable query regardless of authentication status to show classes publicly
   });
-
-  // Redirect to login if not authenticated using useEffect
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setLocation("/login");
-    }
-  }, [isAuthenticated]);
-
-  if (!isAuthenticated) {
-    return null;
-  }
 
   const filteredClasses = classes.filter(classItem => {
     const matchesSearch = classItem.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -111,6 +100,11 @@ export default function Classes() {
   };
 
   const handleManageAttendance = (id: string) => {
+    // Check authentication before accessing attendance
+    if (!isAuthenticated) {
+      setLocation("/login");
+      return;
+    }
     setLocation(`/classes/${id}/attendance`);
   };
 
@@ -141,7 +135,7 @@ export default function Classes() {
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
-            onClick={handleImportClasses}
+            onClick={isAuthenticated ? handleImportClasses : () => setLocation("/login")}
             data-testid="button-import-classes"
           >
             <Upload className="h-4 w-4 mr-2" />
@@ -149,18 +143,18 @@ export default function Classes() {
           </Button>
           <Button
             variant="outline"
-            onClick={handleExportClasses}
+            onClick={isAuthenticated ? handleExportClasses : () => setLocation("/login")}
             data-testid="button-export-classes"
           >
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
           <Button
-            onClick={handleAddClass}
+            onClick={isAuthenticated ? handleAddClass : () => setLocation("/login")}
             data-testid="button-add-class"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Add Class
+            {isAuthenticated ? "Add Class" : "Login to Add Class"}
           </Button>
         </div>
       </div>
@@ -284,9 +278,9 @@ export default function Classes() {
               <p className="text-muted-foreground text-center mb-4">
                 {searchTerm ? "No classes match your search criteria." : "No classes have been created yet."}
               </p>
-              <Button onClick={handleAddClass}>
+              <Button onClick={isAuthenticated ? handleAddClass : () => setLocation("/login")}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Your First Class
+                {isAuthenticated ? "Add Your First Class" : "Login to Add Classes"}
               </Button>
             </CardContent>
           </Card>
@@ -295,6 +289,9 @@ export default function Classes() {
             <ClassCard
               key={classItem.id}
               {...classItem}
+              description={classItem.description || undefined}
+              location={classItem.location || undefined}
+              status={classItem.status as "active" | "inactive" | "completed"}
               onEdit={handleEditClass}
               onDelete={handleDeleteClass}
               onViewDetails={handleViewDetails}

@@ -14,11 +14,13 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import AttendanceMarker from "@/components/AttendanceMarker";
-import { ArrowLeft, Calendar as CalendarIcon, Users, TrendingUp, Save, RefreshCw } from "lucide-react";
+import ImportStudentsDialog from "@/components/ImportStudentsDialog";
+import { ArrowLeft, Calendar as CalendarIcon, Users, TrendingUp, Save, RefreshCw, Upload, Download } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { generateCSV, downloadCSV } from "@/lib/csv-utils";
 import { type Class, type StudentWithEnrollment, type AttendanceStatus, type AttendanceRecordWithDetails } from "@shared/schema";
 
 export default function ClassAttendance() {
@@ -26,6 +28,7 @@ export default function ClassAttendance() {
   const [location, setLocation] = useLocation();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [attendanceMap, setAttendanceMap] = useState<Map<string, AttendanceStatus>>(new Map());
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -199,6 +202,37 @@ export default function ClassAttendance() {
 
   const counts = getAttendanceCountsByStatus();
 
+  const handleExportStudents = async () => {
+    if (students.length === 0) {
+      toast({
+        title: "No students to export",
+        description: `No students are enrolled in ${classData?.name}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create CSV content
+    const headers = ["First Name", "Last Name", "Email", "Phone", "Student ID", "Class"];
+    const data = students.map((student) => ({
+      "First Name": student.firstName || '',
+      "Last Name": student.lastName || '',
+      "Email": student.email || '',
+      "Phone": student.phone || '',
+      "Student ID": student.studentId || '',
+      "Class": classData?.name || ''
+    }));
+
+    const csvContent = generateCSV(headers, data);
+    const fileName = `${classData?.name.replace(/\s+/g, '_')}_students_${new Date().toISOString().split('T')[0]}.csv`;
+    downloadCSV(csvContent, fileName);
+
+    toast({
+      title: "Export successful",
+      description: `Exported ${students.length} students from ${classData?.name}`,
+    });
+  };
+
   if (classLoading) {
     return (
       <div className="flex items-center justify-center h-48">
@@ -350,9 +384,29 @@ export default function ClassAttendance() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">Students</CardTitle>
-            <Badge variant="outline" data-testid="badge-total-students">
-              {students.length} Students
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setImportDialogOpen(true)}
+                data-testid="button-import-students-attendance"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Import
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleExportStudents}
+                data-testid="button-export-students-attendance"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+              <Badge variant="outline" data-testid="badge-total-students">
+                {students.length} Students
+              </Badge>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -382,6 +436,14 @@ export default function ClassAttendance() {
           )}
         </CardContent>
       </Card>
+
+      {/* Import Students Dialog */}
+      <ImportStudentsDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        classId={classId!}
+        className={classData.name}
+      />
     </div>
   );
 }

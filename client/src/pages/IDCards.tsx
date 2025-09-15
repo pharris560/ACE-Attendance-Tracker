@@ -6,7 +6,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import IDCard from "@/components/IDCard";
 import { Search, Download, Printer, IdCard as IdCardIcon, QrCode, RefreshCw } from "lucide-react";
 import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 import { useQuery } from "@tanstack/react-query";
 import type { Student } from "@shared/schema";
 
@@ -42,28 +41,26 @@ export default function IDCards() {
     if (!cardElement) return;
 
     try {
+      // Generate high-quality PNG for mobile use
       const canvas = await html2canvas(cardElement, {
-        scale: 2,
+        scale: 3, // Higher scale for better quality on mobile
         backgroundColor: '#ffffff',
-        useCORS: true
+        useCORS: true,
+        logging: false
       });
 
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'landscape',
-        unit: 'mm',
-        format: [85.6, 53.98] // Credit card size
-      });
-
-      const imgWidth = 85.6;
-      const imgHeight = 53.98;
+      // Convert canvas to PNG and download
+      const imgData = canvas.toDataURL('image/png', 1.0);
       
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-      pdf.save(`id-card-${userId}.pdf`);
+      // Create download link
+      const link = document.createElement('a');
+      link.download = `id-card-${userId}.png`;
+      link.href = imgData;
+      link.click();
       
-      console.log(`Downloaded ID card for ${userId}`);
+      console.log(`Downloaded ID card as PNG for ${userId}`);
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      console.error('Error generating PNG:', error);
     }
   };
 
@@ -102,8 +99,13 @@ export default function IDCards() {
   };
 
   const handleDownloadAll = async () => {
-    console.log('Downloading all ID cards as PDF');
-    // Todo: Implement bulk PDF generation
+    console.log('Downloading all ID cards as PNG files');
+    // Download each card as individual PNG
+    for (const user of filteredUsers) {
+      await handleDownloadCard(user.id);
+      // Add small delay between downloads to prevent browser blocking
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
   };
 
   return (

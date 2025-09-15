@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import QRCode from "qrcode";
 import { useEffect, useState } from "react";
+import aceLogo from "@assets/ACE Logo_1757967694275.jpeg";
 
 interface IDCardProps {
   id: string;
@@ -12,7 +13,6 @@ interface IDCardProps {
   class?: string;
   department?: string;
   photo?: string;
-  companyLogo?: string;
   companyName?: string;
   qrData: string;
 }
@@ -24,8 +24,7 @@ const IDCard = forwardRef<HTMLDivElement, IDCardProps>(({
   class: userClass,
   department,
   photo,
-  companyLogo,
-  companyName = "AttendanceTracker",
+  companyName = "ACE Academy",
   qrData
 }, ref) => {
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
@@ -66,13 +65,7 @@ const IDCard = forwardRef<HTMLDivElement, IDCardProps>(({
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              {companyLogo ? (
-                <img src={companyLogo} alt={companyName} className="h-8 w-8 object-contain" />
-              ) : (
-                <div className="h-8 w-8 bg-primary rounded flex items-center justify-center">
-                  <span className="text-primary-foreground font-bold text-sm">AT</span>
-                </div>
-              )}
+              <img src={aceLogo} alt={companyName} className="h-10 w-10 object-contain rounded" />
               <div>
                 <h3 className="font-bold text-sm text-primary">{companyName}</h3>
                 <p className="text-xs text-muted-foreground">ID Card</p>

@@ -330,8 +330,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // GET /api/classes/:id - Get class details
-  app.get("/api/classes/:id", requireAuth, async (req, res) => {
+  // GET /api/classes/:id - Get class details (public access for attendance)
+  app.get("/api/classes/:id", async (req, res) => {
     try {
       const { id } = req.params;
       const classData = await storage.getClass(id);
@@ -391,8 +391,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // GET /api/classes/:id/enrollments - Get class enrollments
-  app.get("/api/classes/:id/enrollments", requireAuth, async (req, res) => {
+  // GET /api/classes/:id/enrollments - Get class enrollments (public access for attendance)
+  app.get("/api/classes/:id/enrollments", async (req, res) => {
     try {
       const { id } = req.params;
       const enrollments = await storage.getClassEnrollments(id);
@@ -534,15 +534,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Attendance management routes
   
-  // POST /api/attendance - Mark attendance
-  app.post("/api/attendance", requireAuth, async (req, res) => {
+  // POST /api/attendance - Mark attendance (public access)
+  app.post("/api/attendance", async (req, res) => {
     try {
-      const authReq = req as AuthenticatedRequest;
       const validatedData = markAttendanceSchema.parse(req.body);
       
       const attendance = await storage.markAttendance({
         ...validatedData,
-        markedBy: authReq.user!.id,
+        markedBy: "anonymous", // Default for public access
       });
       
       res.status(201).json(attendance);
@@ -559,17 +558,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // POST /api/attendance/bulk - Bulk mark attendance
-  app.post("/api/attendance/bulk", requireAuth, async (req, res) => {
+  // POST /api/attendance/bulk - Bulk mark attendance (public access)
+  app.post("/api/attendance/bulk", async (req, res) => {
     try {
-      const authReq = req as AuthenticatedRequest;
       const validatedData = bulkAttendanceSchema.parse(req.body);
       
       const attendanceRecords = validatedData.records.map(record => ({
         ...record,
         classId: validatedData.classId,
         date: validatedData.date,
-        markedBy: authReq.user!.id,
+        markedBy: "anonymous", // Default for public access
       }));
       
       const results = await storage.bulkMarkAttendance(attendanceRecords);
@@ -587,8 +585,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // GET /api/attendance/class/:classId - Get attendance by class
-  app.get("/api/attendance/class/:classId", requireAuth, async (req, res) => {
+  // GET /api/attendance/class/:classId - Get attendance by class (public access)
+  app.get("/api/attendance/class/:classId", async (req, res) => {
     try {
       const { classId } = req.params;
       const { date } = req.query;
@@ -659,8 +657,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // GET /api/attendance/stats/:classId - Get attendance statistics for a class
-  app.get("/api/attendance/stats/:classId", requireAuth, async (req, res) => {
+  // GET /api/attendance/stats/:classId - Get attendance statistics for a class (public access)
+  app.get("/api/attendance/stats/:classId", async (req, res) => {
     try {
       const { classId } = req.params;
       const { startDate, endDate } = req.query;

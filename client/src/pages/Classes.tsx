@@ -102,11 +102,7 @@ export default function Classes() {
   };
 
   const handleManageAttendance = (id: string) => {
-    // Check authentication before accessing attendance
-    if (!isAuthenticated) {
-      setLocation("/login");
-      return;
-    }
+    // Allow direct access to attendance without login
     setLocation(`/classes/${id}/attendance`);
   };
 

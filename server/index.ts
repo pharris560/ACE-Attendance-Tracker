@@ -3,6 +3,63 @@ import session from "express-session";
 import MemoryStore from "memorystore";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { storage } from "./storage";
+
+// Function to create test data for development
+async function createTestData() {
+  try {
+    // Check if test data already exists
+    const existingClasses = await storage.getAllClasses();
+    if (existingClasses.length > 0) {
+      log('Test data already exists, skipping creation');
+      return;
+    }
+
+    log('Creating test data...');
+    
+    // Create a default user
+    const user = await storage.createUser({
+      username: 'anonymous',
+      password: 'placeholder'
+    });
+
+    // Create a test class
+    const testClass = await storage.createClass({
+      name: 'Mathematics 101',
+      description: 'Basic Mathematics Course',
+      instructor: 'Prof. Smith',
+      capacity: 30,
+      location: 'Room 101',
+      schedule: '{"days":"mon-wed-fri","time":"10:00-11:00"}',
+      status: 'active'
+    }, user.id);
+
+    // Create test students
+    const studentData = [
+      { firstName: 'Alice', lastName: 'Johnson', studentId: 'STU001', email: 'alice@example.com' },
+      { firstName: 'Bob', lastName: 'Wilson', studentId: 'STU002', email: 'bob@example.com' },
+      { firstName: 'Carol', lastName: 'Davis', studentId: 'STU003', email: 'carol@example.com' },
+      { firstName: 'David', lastName: 'Brown', studentId: 'STU004', email: 'david@example.com' }
+    ];
+
+    for (const studentInfo of studentData) {
+      const student = await storage.createStudent({
+        ...studentInfo,
+        status: 'active',
+        phone: null,
+        dateOfBirth: null,
+        enrollmentDate: new Date().toISOString().split('T')[0]
+      }, user.id);
+
+      // Enroll student in class
+      await storage.enrollStudent(testClass.id, student.id);
+    }
+
+    log('Test data created successfully!');
+  } catch (error) {
+    log('Error creating test data:', error);
+  }
+}
 
 const app = express();
 app.use(express.json());
@@ -56,6 +113,11 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Create test data in development
+  if (app.get("env") === "development") {
+    await createTestData();
+  }
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

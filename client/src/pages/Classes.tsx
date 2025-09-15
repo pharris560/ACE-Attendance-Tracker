@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import ClassCard from "@/components/ClassCard";
+import ImportClassesDialog from "@/components/ImportClassesDialog";
 import { Search, Plus, Download, Upload, GraduationCap, Users, BookOpen, RefreshCw } from "lucide-react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,6 +15,7 @@ import { type ClassWithStats } from "@shared/schema";
 export default function Classes() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("all");
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [location, setLocation] = useLocation();
   const { user, isAuthenticated } = useAuth();
 
@@ -113,8 +115,11 @@ export default function Classes() {
   };
 
   const handleImportClasses = () => {
-    console.log('Importing classes from CSV');
-    // Todo: Show import dialog
+    if (!isAuthenticated) {
+      setLocation("/login");
+      return;
+    }
+    setIsImportDialogOpen(true);
   };
 
   const handleExportClasses = () => {
@@ -324,6 +329,12 @@ export default function Classes() {
           </CardContent>
         </Card>
       )}
+
+      {/* Import Classes Dialog */}
+      <ImportClassesDialog 
+        open={isImportDialogOpen}
+        onOpenChange={setIsImportDialogOpen}
+      />
     </div>
   );
 }

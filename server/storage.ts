@@ -496,6 +496,12 @@ export class MemStorage implements IStorage {
   async markAttendance(attendanceData: InsertAttendanceRecord): Promise<AttendanceRecord> {
     const id = randomUUID();
     const now = new Date();
+    
+    // Ensure date is present
+    if (!attendanceData.date) {
+      throw new Error("Date is required for marking attendance");
+    }
+    
     const attendance: AttendanceRecord = {
       id,
       ...attendanceData,

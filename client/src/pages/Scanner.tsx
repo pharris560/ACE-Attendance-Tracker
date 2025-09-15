@@ -34,25 +34,23 @@ export default function Scanner() {
       // Get current date in YYYY-MM-DD format
       const today = new Date().toISOString().split('T')[0];
       
-      // For now, use a default class ID if not provided
-      const classId = data.classId || 'default-class';
+      // Use the first available class (Mathematics 101) for demo purposes
+      // In production, you'd want to let the user select a class or determine it from context
+      const classId = data.classId || '69d3edce-b628-4ed2-9ee8-0ad7a855b827'; // Mathematics 101
       
-      return apiRequest('/api/attendance', {
-        method: 'POST',
-        body: {
-          studentId: data.studentId,
-          classId: classId,
-          date: today,
-          status: data.status,
-          notes: 'Marked via QR code scanner',
-          ...(data.location && {
-            latitude: data.location.latitude,
-            longitude: data.location.longitude,
-            locationAccuracy: data.location.accuracy,
-            checkInTime: new Date().toISOString(),
-          }),
-        },
-      });
+      return apiRequest('POST', '/api/attendance', {
+        studentId: data.studentId,
+        classId: classId,
+        date: today,
+        status: data.status,
+        notes: 'Marked via QR code scanner',
+        ...(data.location && {
+          latitude: data.location.latitude,
+          longitude: data.location.longitude,
+          locationAccuracy: data.location.accuracy,
+          checkInTime: new Date().toISOString(),
+        }),
+      }).then(res => res.json());
     },
     onSuccess: (data, variables) => {
       toast({
@@ -72,16 +70,16 @@ export default function Scanner() {
   const handleScanSuccess = async (result: string, location?: any) => {
     console.log('QR scan successful:', result, 'Location:', location);
     
-    // Parse QR code data (format: studentId-email-role)
+    // Parse QR code data (format: userId-email-role)
     const parts = result.split('-');
-    const studentId = parts[0] || result;
+    const userId = parts[0] || result; // This is the user's UUID
     const email = parts[1];
     const role = parts[2];
     
     // Mark attendance in backend
     try {
       await markAttendanceMutation.mutateAsync({
-        studentId,
+        studentId: userId, // Using the user ID from QR code
         status: 'present',
         location,
       });
@@ -91,7 +89,7 @@ export default function Scanner() {
         result,
         timestamp: new Date(),
         status: 'success',
-        userName: email || studentId,
+        userName: email || userId,
         location,
       }, ...prev.slice(0, 9)]); // Keep last 10 scans
     } catch (error) {
@@ -101,7 +99,7 @@ export default function Scanner() {
         result,
         timestamp: new Date(),
         status: 'error',
-        userName: email || studentId,
+        userName: email || userId,
       }, ...prev.slice(0, 9)]);
     }
   };

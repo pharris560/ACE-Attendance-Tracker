@@ -123,14 +123,38 @@ export default function AttendanceMarker({
               </Badge>
             )}
             {locationData && (locationData.latitude || locationData.longitude) && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <MapPin className="h-3 w-3" />
-                <span>
-                  {locationData.locationAccuracy ? 
-                    `±${Math.round(parseFloat(locationData.locationAccuracy))}m` : 
-                    'Location tracked'
-                  }
-                </span>
+              <div className="flex items-center gap-1">
+                {(() => {
+                  const accuracy = locationData.locationAccuracy ? parseFloat(locationData.locationAccuracy) : null;
+                  const isOnsite = accuracy !== null && accuracy <= 100; // Within 100m is considered onsite
+                  const accuracyLevel = accuracy === null ? 'unknown' : 
+                    accuracy <= 35 ? 'excellent' :
+                    accuracy <= 100 ? 'good' :
+                    accuracy <= 500 ? 'fair' : 'poor';
+                  
+                  const mapPinColor = 
+                    accuracyLevel === 'excellent' ? 'text-green-500' :
+                    accuracyLevel === 'good' ? 'text-green-400' :
+                    accuracyLevel === 'fair' ? 'text-yellow-500' :
+                    accuracyLevel === 'poor' ? 'text-red-500' :
+                    'text-gray-400';
+                  
+                  return (
+                    <>
+                      <MapPin className={`h-4 w-4 ${mapPinColor}`} />
+                      <div className="flex flex-col">
+                        <span className={`text-xs font-medium ${
+                          isOnsite ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'
+                        }`}>
+                          {isOnsite ? 'ONSITE' : 'REMOTE'}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {accuracy !== null ? `±${Math.round(accuracy)}m` : 'Location tracked'}
+                        </span>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             )}
           </div>

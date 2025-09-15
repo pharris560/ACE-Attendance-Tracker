@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/popover";
 import AttendanceMarker from "@/components/AttendanceMarker";
 import ImportStudentsDialog from "@/components/ImportStudentsDialog";
-import { ArrowLeft, Calendar as CalendarIcon, Users, TrendingUp, Save, RefreshCw, Upload, Download } from "lucide-react";
+import { ArrowLeft, Calendar as CalendarIcon, Users, TrendingUp, Save, RefreshCw, Upload, Download, MapPin } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -201,6 +201,29 @@ export default function ClassAttendance() {
   };
 
   const counts = getAttendanceCountsByStatus();
+  
+  const getLocationStats = () => {
+    let onsite = 0;
+    let remote = 0;
+    let noLocation = 0;
+    
+    attendanceRecords.forEach((record) => {
+      if (record.locationAccuracy) {
+        const accuracy = parseFloat(record.locationAccuracy);
+        if (accuracy <= 100) {
+          onsite++;
+        } else {
+          remote++;
+        }
+      } else if (record.latitude || record.longitude) {
+        noLocation++;
+      }
+    });
+    
+    return { onsite, remote, noLocation };
+  };
+  
+  const locationStats = getLocationStats();
 
   const handleExportStudents = async () => {
     if (students.length === 0) {
@@ -273,7 +296,7 @@ export default function ClassAttendance() {
       </div>
 
       {/* Date Selector and Stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium">Date</CardTitle>
@@ -341,6 +364,31 @@ export default function ClassAttendance() {
             <p className="text-xs text-muted-foreground">
               Enrolled students
             </p>
+          </CardContent>
+        </Card>
+
+        <Card className="hover-elevate">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Location</CardTitle>
+            <MapPin className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Onsite:</span>
+                <span className="text-sm font-bold text-green-600">{locationStats.onsite}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Remote:</span>
+                <span className="text-sm font-bold text-yellow-600">{locationStats.remote}</span>
+              </div>
+              {locationStats.noLocation > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Unknown:</span>
+                  <span className="text-sm font-bold text-gray-600">{locationStats.noLocation}</span>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

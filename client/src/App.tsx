@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useAuth } from "@/hooks/useAuth";
+import aceLogo from "@assets/ACE Logo_1757981129925.jpeg";
 import Dashboard from "@/pages/Dashboard";
 import Attendance from "@/pages/Attendance";
 import Scanner from "@/pages/Scanner";
@@ -78,6 +79,11 @@ function App() {
                   <header className="flex items-center justify-between p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                     <div className="flex items-center gap-4">
                       <SidebarTrigger data-testid="button-sidebar-toggle" />
+                      <img 
+                        src={aceLogo} 
+                        alt="ACE Logo" 
+                        className="h-8 w-auto object-contain"
+                      />
                       <h1 className="font-semibold text-lg">AttendanceTracker</h1>
                     </div>
                     <ThemeToggle />

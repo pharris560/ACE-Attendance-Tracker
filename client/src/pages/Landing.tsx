@@ -2,11 +2,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Users, Calendar, BarChart, MapPin, QrCode } from "lucide-react";
 
+import aceLogo from "@assets/ACE Logo_1757981129925.jpeg";
+
 export default function Landing() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted">
       {/* Hero Section */}
       <div className="container mx-auto px-4 pt-20 pb-16 text-center">
+        <img 
+          src={aceLogo} 
+          alt="ACE Logo" 
+          className="h-24 md:h-32 mx-auto mb-8 object-contain"
+        />
         <h1 className="text-4xl md:text-6xl font-bold mb-6">
           Attendance Management System
         </h1>

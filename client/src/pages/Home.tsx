@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import { Users, Calendar, QrCode, FileSpreadsheet, Settings, LogOut } from "lucide-react";
+import aceLogo from "@assets/ACE Logo_1757981129925.jpeg";
 
 export default function Home() {
   const { user } = useAuth();
@@ -14,7 +15,14 @@ export default function Home() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Header */}
+      {/* Logo and Header */}
+      <div className="text-center mb-8">
+        <img 
+          src={aceLogo} 
+          alt="ACE Logo" 
+          className="h-20 mx-auto mb-6 object-contain"
+        />
+      </div>
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold mb-2">

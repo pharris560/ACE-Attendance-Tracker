@@ -1,6 +1,7 @@
 import { 
   type User, 
-  type InsertUser, 
+  type InsertUser,
+  type UpsertUser, 
   type ApiKey, 
   type InsertApiKey,
   type UserSession,
@@ -30,6 +31,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   verifyUserPassword(username: string, password: string): Promise<User | null>;
+  upsertUser(user: UpsertUser): Promise<User>;
   
   // Session operations
   createSession(session: InsertUserSession): Promise<UserSession>;
@@ -153,8 +155,41 @@ export class MemStorage implements IStorage {
     const user = await this.getUserByUsername(username);
     if (!user) return null;
     
-    const isValid = this.verifyPassword(password, user.password);
+    const isValid = this.verifyPassword(password, user.password!);
     return isValid ? user : null;
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    // Check if user exists
+    let user = userData.id ? await this.getUser(userData.id) : undefined;
+    
+    if (user) {
+      // Update existing user
+      const updatedUser: User = {
+        ...user,
+        ...userData,
+        updatedAt: new Date(),
+      };
+      this.users.set(user.id, updatedUser);
+      return updatedUser;
+    } else {
+      // Create new user
+      const id = userData.id || randomUUID();
+      const newUser: User = {
+        id,
+        email: userData.email || null,
+        firstName: userData.firstName || null,
+        lastName: userData.lastName || null,
+        profileImageUrl: userData.profileImageUrl || null,
+        username: userData.username || null,
+        password: userData.password || null,
+        role: userData.role || "staff",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      this.users.set(id, newUser);
+      return newUser;
+    }
   }
 
   // Session operations

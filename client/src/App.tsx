@@ -8,6 +8,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import Dashboard from "@/pages/Dashboard";
 import Attendance from "@/pages/Attendance";
 import Scanner from "@/pages/Scanner";
@@ -18,27 +19,43 @@ import ClassAttendance from "@/pages/ClassAttendance";
 import IDCards from "@/pages/IDCards";
 import APIKeys from "@/pages/APIKeys";
 import Reports from "@/pages/Reports";
+import Landing from "@/pages/Landing";
+import Home from "@/pages/Home";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import NotFound from "@/pages/not-found";
 
 function Router() {
+  const { isAuthenticated, isLoading } = useAuth();
+
   return (
     <Switch>
-      <Route path="/login" component={Login} />
-      <Route path="/register" component={Register} />
-      <Route path="/" component={Dashboard} />
-      <Route path="/attendance" component={Attendance} />
-      <Route path="/scanner" component={Scanner} />
-      <Route path="/users" component={Users} />
-      <Route path="/classes" component={Classes} />
-      <Route path="/classes/add" component={AddClass} />
-      <Route path="/classes/:classId/attendance" component={ClassAttendance} />
-      <Route path="/id-cards" component={IDCards} />
-      <Route path="/reports" component={Reports} />
-      <Route path="/settings/api-keys" component={APIKeys} />
-      {/* Fallback to 404 */}
-      <Route component={NotFound} />
+      {isLoading || !isAuthenticated ? (
+        <>
+          <Route path="/" component={Landing} />
+          <Route path="/login" component={Login} />
+          <Route path="/register" component={Register} />
+          <Route component={Landing} />
+        </>
+      ) : (
+        <>
+          <Route path="/" component={Home} />
+          <Route path="/dashboard" component={Dashboard} />
+          <Route path="/attendance" component={Attendance} />
+          <Route path="/scanner" component={Scanner} />
+          <Route path="/users" component={Users} />
+          <Route path="/classes" component={Classes} />
+          <Route path="/classes/add" component={AddClass} />
+          <Route path="/classes/:classId/attendance" component={ClassAttendance} />
+          <Route path="/id-cards" component={IDCards} />
+          <Route path="/reports" component={Reports} />
+          <Route path="/settings/api-keys" component={APIKeys} />
+          <Route path="/api-keys" component={APIKeys} />
+          <Route path="/students" component={IDCards} />
+          {/* Fallback to 404 */}
+          <Route component={NotFound} />
+        </>
+      )}
     </Switch>
   );
 }

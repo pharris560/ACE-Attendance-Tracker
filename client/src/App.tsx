@@ -27,19 +27,10 @@ import Register from "@/pages/Register";
 import NotFound from "@/pages/not-found";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+ //const { isAuthenticated, isLoading } = useAuth();
 
   return (
     <Switch>
-      {isLoading || !isAuthenticated ? (
-        <>
-          <Route path="/" component={Landing} />
-          <Route path="/login" component={Login} />
-          <Route path="/register" component={Register} />
-          <Route component={Landing} />
-        </>
-      ) : (
-        <>
           <Route path="/" component={Home} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/attendance" component={Attendance} />
@@ -53,11 +44,8 @@ function Router() {
           <Route path="/settings/api-keys" component={APIKeys} />
           <Route path="/api-keys" component={APIKeys} />
           <Route path="/students" component={IDCards} />
-          {/* Fallback to 404 */}
           <Route component={NotFound} />
-        </>
-      )}
-    </Switch>
+        </Switch>
   );
 }
 

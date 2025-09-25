@@ -1,0 +1,48 @@
+service: ace-attendance-tracker
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-2
+  stage: ${opt:stage, 'dev'}
+  
+  environment:
+    DATABASE_URL: ${env:DATABASE_URL}
+    NODE_ENV: ${self:provider.stage}
+    SESSION_SECRET: ${env:SESSION_SECRET, 'your-super-secret-key-change-in-production'}
+
+plugins:
+  - serverless-plugin-typescript
+
+functions:
+  api:
+    handler: server/index.handler
+    events:
+      - http:
+          path: /{proxy+}
+          method: ANY
+          cors: true
+      - http:
+          path: /
+          method: ANY
+          cors: true
+    timeout: 29
+    memorySize: 512
+
+package:
+  exclude:
+    - .git/**
+    - .env*
+    - README.md
+    - "*.log"
+    - ".DS_Store"
+    - client/**
+    - screenshots/**
+    - attached_assets/**
+    - dist/**
+    - "*.png"
+    - "*.jpg"
+    - "*.jpeg"
+    - vite.config.ts
+    - tailwind.config.ts
+    - postcss.config.js

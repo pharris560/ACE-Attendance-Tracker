@@ -11,12 +11,9 @@ provider:
     NODE_ENV: ${self:provider.stage}
     SESSION_SECRET: ${env:SESSION_SECRET, 'your-super-secret-key-change-in-production'}
 
-plugins:
-  - serverless-plugin-typescript
-
 functions:
   api:
-    handler: server/index.handler
+    handler: handler.handler
     events:
       - http:
           path: /{proxy+}
@@ -30,19 +27,6 @@ functions:
     memorySize: 512
 
 package:
-  exclude:
-    - .git/**
-    - .env*
-    - README.md
-    - "*.log"
-    - ".DS_Store"
-    - client/**
-    - screenshots/**
-    - attached_assets/**
-    - dist/**
-    - "*.png"
-    - "*.jpg"
-    - "*.jpeg"
-    - vite.config.ts
-    - tailwind.config.ts
-    - postcss.config.js
+  include:
+    - handler.cjs
+    - server/*.cjs

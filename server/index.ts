@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import MemoryStore from "memorystore";
+import serverless from "serverless-http";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { storage } from "./storage";
@@ -112,41 +113,53 @@ app.use((req, res, next) => {
   next();
 });
 
-(async () => {
-  // Create test data in development
-  if (app.get("env") === "development") {
+// Initialize the app
+async function initializeApp() {
+  // Create test data in development/staging
+  if (process.env.NODE_ENV !== 'production') {
     await createTestData();
   }
   
-  const server = await registerRoutes(app);
+  await registerRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
-
+    
+    console.error('Error:', err);
     res.status(status).json({ message });
-    throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
+  // For production (Lambda), serve static files
+  if (process.env.NODE_ENV === 'production') {
     serveStatic(app);
   }
+  
+  return app;
+}
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
-})();
+// For AWS Lambda
+let appPromise: Promise<express.Application> | null = null;
+
+export const handler = async (event: any, context: any) => {
+  // Initialize app only once (cold start)
+  if (!appPromise) {
+    appPromise = initializeApp();
+  }
+  
+  const app = await appPromise;
+  const serverlessHandler = serverless(app);
+  return serverlessHandler(event, context);
+};
+
+// For local development
+if (import.meta.url === `file://${process.argv[1]}`) {
+  (async () => {
+    const app = await initializeApp();
+    
+    const port = parseInt(process.env.PORT || '5000', 10);
+    app.listen(port, '0.0.0.0', () => {
+      log(`serving on port ${port}`);
+    });
+  })();
+}
